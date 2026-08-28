@@ -63,7 +63,7 @@ def run_e2e(url):
         assert page.locator('[data-download-cta][href="#download"]').count() == 2
         assert page.locator('a[href*="releases/latest/download"]').count() == 0
 
-        download_url = "https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip"
+        download_url = "https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac.zip"
         page.route(
             "https://cfgauss.com.br/api/lead/clean-my-mac",
             lambda route: route.fulfill(status=200, content_type="application/json", body=f'{{"success":true,"downloadUrl":"{download_url}"}}'),

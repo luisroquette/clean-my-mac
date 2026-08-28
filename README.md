@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/product%20page-open-F28C38?style=flat-square" alt="Open the Clean My Mac product page"></a>
-  <a href="https://github.com/luisroquette/clean-my-mac/releases/latest"><img src="https://img.shields.io/badge/version-1.0.0-1D1D1F?style=flat-square" alt="Version 1.0.0"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/releases/latest"><img src="https://img.shields.io/badge/version-1.1.0-1D1D1F?style=flat-square" alt="Version 1.1.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-1D1D1F?style=flat-square" alt="macOS 14 or later">
 </p>
