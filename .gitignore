@@ -1,0 +1,8 @@
+.DS_Store
+.build/
+DerivedData/
+graphify-out/
+dist/
+release/
+*.dSYM
+*.zip
