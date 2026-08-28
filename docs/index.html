@@ -89,14 +89,35 @@
         <h2>Two thresholds. No guesswork.</h2>
         <p>Move the storage level. This browser demo mirrors the published policy; it controls nothing on your Mac.</p>
       </div>
-      <div class="pressure-card">
-        <div class="gauge-shell"><span class="gauge-label gauge-label-top">ALERT 90</span><span class="gauge-label gauge-label-bottom">CLEAN 95</span><div class="gauge"><div class="gauge-value"><strong data-percent>84%</strong><span>USED</span></div></div></div>
-        <div class="pressure-controls">
-          <label for="storage">Simulated storage usage</label>
-          <input id="storage" type="range" min="70" max="99" value="84" aria-describedby="decision-copy">
-          <div class="ticks"><span>70%</span><span>90% alert</span><span>95% clean</span><span>99%</span></div>
-          <div class="decision" aria-live="polite"><span data-state>NORMAL</span><h3 data-title>Keep watching.</h3><p id="decision-copy" data-copy>Storage is below the warning threshold. No action is taken.</p></div>
+      <div class="storage-console" data-storage-console>
+        <header class="console-bar">
+          <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <strong><img src="img/app-icon.svg" alt="" width="24" height="24">Clean My Mac <span>— Storage Control</span></strong>
+          <div class="console-status"><span><i></i>Local only</span><button type="button" data-auto-clean aria-pressed="true">Automatic cleaning: <b data-auto-label>On</b></button></div>
+        </header>
+        <div class="console-grid">
+          <aside class="pressure-readout">
+            <div class="gauge-shell"><span class="gauge-label gauge-label-top">ALERT 90</span><span class="gauge-label gauge-label-bottom">CLEAN 95</span><div class="gauge"><div class="gauge-value"><strong data-percent>84%</strong><span>USED</span></div></div></div>
+            <p data-gauge-status>Storage pressure is normal.</p>
+          </aside>
+          <div class="pressure-controls">
+            <label for="storage">Storage pressure thresholds</label>
+            <div class="threshold-control"><span class="threshold-track" aria-hidden="true"><i></i><i></i><i></i></span><input id="storage" type="range" min="70" max="99" step="0.1" value="84" aria-describedby="decision-copy"></div>
+            <div class="ticks"><span>70%<b>NORMAL</b></span><span>90%<b>ALERT</b></span><span>95%<b>CLEAN</b></span><span>99%</span></div>
+            <div class="decision-flow">
+              <div class="decision" aria-live="polite"><span data-state>NORMAL</span><h3 data-title>Keep watching.</h3><p id="decision-copy" data-copy>Storage is below the warning threshold. No action is taken.</p></div>
+              <span class="flow-arrow" aria-hidden="true">→</span>
+              <div class="target-state"><span>TARGET STATE</span><strong>84%</strong><small>healthy pressure</small></div>
+            </div>
+          </div>
         </div>
+        <ol class="cleanup-timeline" aria-label="Cleanup progress">
+          <li><i>!</i><strong>Detected</strong><span>Threshold reached</span></li>
+          <li><i>⌁</i><strong>Scanning</strong><span>Allow list only</span></li>
+          <li><i>↘</i><strong>Cleaning</strong><span>Generated files</span></li>
+          <li><i>✓</i><strong>Optimized</strong><span>Pressure relieved</span></li>
+        </ol>
+        <footer class="audit-strip"><strong>Audit scope</strong><span>Homebrew + tool caches</span><span>Ignored <code>node_modules</code></span><span><code>.next</code> build output</span><span>Git-tracked source protected</span></footer>
       </div>
     </section>
 
@@ -126,6 +147,6 @@
   </main>
 
   <footer><div><img src="img/app-icon.svg" alt="" width="32" height="32"><strong>Clean My Mac</strong></div><p>Independent open-source software by <a href="https://github.com/luisroquette">Luis Roquette</a>. Not affiliated with or endorsed by MacPaw.</p></footer>
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
