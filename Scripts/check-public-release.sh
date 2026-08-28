@@ -4,7 +4,7 @@ set -euo pipefail
 project_dir="${0:A:h:h}"
 cd "$project_dir"
 
-required=(README.md LICENSE SECURITY.md VERSION docs/index.html docs/styles.css docs/script.js docs/img/app-popover.webp)
+required=(README.md LICENSE SECURITY.md VERSION docs/index.html docs/styles.css docs/polish.css docs/script.js docs/img/app-popover.webp docs/img/video-poster.webp)
 for path in "${required[@]}"; do
     [[ -f "$path" ]] || { print -u2 "Missing public file: $path"; exit 1; }
 done
