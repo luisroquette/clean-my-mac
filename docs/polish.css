@@ -881,6 +881,24 @@ body::before {
   white-space: nowrap;
 }
 
+.install { align-items: center; }
+.install-help { display: inline-block; margin-top: 14px; color: var(--muted); }
+.download-gate { width: min(100%, 480px); padding: clamp(24px, 4vw, 42px); border: 1px solid rgba(242, 140, 56, 0.3); border-radius: 24px; background: linear-gradient(145deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.018)); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24); }
+.download-gate h3 { margin: 10px 0 8px; font-family: var(--serif); font-size: clamp(30px, 3vw, 42px); font-weight: 500; line-height: 1; letter-spacing: -0.035em; }
+.download-gate p { color: var(--muted); }
+.gate-code { color: var(--orange); font-family: "SFMono-Regular", Consolas, monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.15em; }
+.download-gate form { display: grid; gap: 13px; margin-top: 24px; }
+.download-gate label { display: grid; gap: 6px; color: #d8d0c7; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.download-gate input { width: 100%; min-height: 48px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 10px; outline: none; background: rgba(255, 255, 255, 0.055); color: var(--ink); font: 400 16px var(--sans); text-transform: none; transition: border-color 180ms ease, box-shadow 180ms ease; }
+.download-gate input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(242, 140, 56, 0.14); }
+.download-gate .button { width: 100%; margin-top: 5px; border: 0; cursor: pointer; text-align: left; }
+.download-gate .button:disabled { cursor: wait; opacity: 0.65; transform: none; }
+.lead-honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
+.form-status { min-height: 21px; margin: 0 !important; font-size: 13px; }
+.form-status[data-kind="error"] { color: #ff8f7f; }
+.download-ready:focus { outline: none; }
+.download-ready .button { margin-top: 20px; }
+
 @media (max-width: 900px) {
   .coordinate-side { display: none; }
   .app-shot { width: min(520px, 100%); min-width: 0; }
