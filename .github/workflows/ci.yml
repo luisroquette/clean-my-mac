@@ -18,5 +18,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Install test dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --disable-pip-version-check -r requirements-dev.txt
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - name: Run canonical preflight
         run: ./Scripts/preflight.sh
