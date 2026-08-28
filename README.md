@@ -1,87 +1,141 @@
-# Clean My Mac
-
-**Autonomous SSD protection for people who build with Codex, Claude Code and coding agents.**
-
 <p align="center">
-  <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/product%20page-open-F28C38?style=flat-square" alt="Open the Clean My Mac product page"></a>
-  <a href="https://github.com/luisroquette/clean-my-mac/releases/latest"><img src="https://img.shields.io/badge/version-1.1.1-1D1D1F?style=flat-square" alt="Version 1.1.1"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square" alt="MIT license"></a>
-  <img src="https://img.shields.io/badge/macOS-14%2B-1D1D1F?style=flat-square" alt="macOS 14 or later">
+  <img src="docs/img/app-icon.png" width="92" height="92" alt="Ícone do Clean My Mac">
 </p>
 
-Coding agents move fast, but parallel worktrees, dependency trees, builds and
-tool caches can quietly consume the entire SSD. Clean My Mac watches the data
-volume every minute, warns at 75%, and automatically cleans narrowly
-allow-listed, regenerable development artifacts at 78%.
+<h1 align="center">Clean My Mac</h1>
 
-No account. No telemetry. No cloud service. Native SwiftUI, not Electron.
+<p align="center">
+  <strong>Proteção autônoma de SSD para quem constrói com IA.</strong><br>
+  Feito para o rastro técnico deixado por Codex, Claude Code e agentes de programação.
+</p>
 
-![Clean My Mac showing a 91% storage warning and the automatic-cleanup controls](docs/img/app-popover.webp)
+<p align="center">
+  <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/BAIXAR-PARA%20MAC-F28C38?style=for-the-badge&logo=apple&logoColor=white" alt="Baixar Clean My Mac"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.1.1"><img src="https://img.shields.io/badge/VERSÃO-1.1.1-201C19?style=for-the-badge" alt="Versão 1.1.1"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/luisroquette/clean-my-mac/ci.yml?branch=main&style=for-the-badge&label=CI" alt="Status do CI"></a>
+</p>
 
-[Watch the 12-second product demo](docs/video/clean-my-mac-demo.mp4)
+<p align="center">
+  <a href="https://luisroquette.github.io/clean-my-mac/"><img src="docs/img/og-card.png" alt="Clean My Mac protegendo o SSD de resíduos gerados por agentes de IA"></a>
+</p>
 
-## Why it exists
+## Sua IA termina a tarefa. Os gigabytes ficam.
 
-Codex and Claude Code can leave several gigabytes behind after a task is done:
-worktrees, `node_modules`, `.next` output and package-manager caches. Disk
-pressure becomes visible only when the next build fails or an update stops.
-Clean My Mac turns that AI-development failure mode into four guardrails:
+Agentes trabalham em paralelo, criam worktrees, instalam dependências e repetem
+builds. Depois da entrega, `node_modules`, `.next` e caches de ferramentas
+continuam ocupando o SSD. O problema costuma aparecer tarde: a próxima build
+falha, uma atualização para ou o macOS fica sem espaço de trabalho.
 
-1. **75% used:** visible menu-bar state and a macOS notification.
-2. **78% used:** optional automatic cleanup of narrowly allow-listed data.
-3. **80% used:** hard-limit alert if safe cleanup cannot recover enough space.
-4. **95% used:** emergency retries every 2 minutes instead of every 15 minutes.
-5. **Below 73%:** the warning rearms for the next storage cycle.
+Clean My Mac monitora o volume de dados a cada minuto e age sem interromper o
+fluxo:
 
-## Built for AI coding workflows
+| 75% | 78% | 80% | 95% |
+|:---:|:---:|:---:|:---:|
+| **Alerta** | **Limpeza autônoma** | **Limite protegido** | **Retry emergencial** |
+| Um aviso claro | Lista segura | Avisa se não bastar | Nova tentativa a cada 2 min |
 
-This is not a broad PC-maintenance utility. CCleaner and generic cleaners scan
-the operating system; Clean My Mac focuses on the technical residue produced by
-coding agents. It checks Git state, active development processes and a strict
-allow list before removing artifacts that the project can rebuild.
+<p align="center">
+  <img src="docs/img/readme-storage-control.png" alt="Modelo de decisão do Clean My Mac em 95% de uso do SSD">
+</p>
 
-Install it once, keep automatic cleanup enabled, and let your agents work. You
-can also trigger the same safe cleanup with one click from the macOS menu bar.
+## Uma categoria feita para fluxos com IA
 
-## Safety contract
+CCleaner e utilitários genéricos fazem manutenção ampla do sistema. Clean My Mac
+entende projetos de software: Git, worktrees, processos ativos, builds e caches
+regeneráveis. O foco não é “limpar o Mac”; é impedir que agentes de código
+consumam silenciosamente todo o SSD.
 
-| It may remove | It never removes |
+- **Autônomo:** inicia com a sessão e verifica o disco a cada minuto.
+- **Um clique:** `Limpar agora` executa a mesma política segura sob demanda.
+- **Local:** nenhum dado, caminho ou evento sai do computador.
+- **Auditável:** código, regras e log de cada execução são públicos ou locais.
+
+## Como a decisão funciona
+
+```mermaid
+flowchart LR
+    A[Monitor local\na cada 1 minuto] --> B{Uso do SSD}
+    B -->|abaixo de 75%| C[Observar]
+    B -->|75%| D[Alertar]
+    B -->|78% ou mais| E[Mapear artefatos]
+    E --> F{Git ignorado,\nregenerável e inativo?}
+    F -->|não| G[Preservar e registrar]
+    F -->|sim| H[Remover e verificar]
+    B -->|95% ou mais| I[Retry emergencial\na cada 2 minutos]
+    I --> E
+```
+
+O percentual usado pela política é o mesmo número arredondado mostrado na
+interface. Se o aplicativo exibe **95%**, o modo emergencial já está ativo.
+
+## Contrato de segurança
+
+| Pode remover | Nunca remove |
 |---|---|
-| npm, uv, Bun, Deno and Homebrew caches when those tools are installed | Documents, Desktop, Downloads, Photos, Music, Movies or Public folders |
-| `node_modules` and `.next` directories of 100 MB or more | Git-tracked or non-ignored project content |
-| Only generated folders inside a Git repository and ignored by Git | Artifacts belonging to a project used by any current-user process |
-| Only after checking Git status before and after cleanup | Trash contents, Docker data, credentials, source files or external volumes |
+| Caches de npm, uv, Bun, Deno e Homebrew | Documentos, Mesa, Downloads e mídia pessoal |
+| `node_modules` e `.next` com 100 MB ou mais | Fontes rastreadas ou conteúdo não ignorado pelo Git |
+| Artefatos ignorados dentro de um repositório Git | Projetos usados por qualquer processo do utilizador |
+| Somente após verificar Git e processos novamente | Lixeira, Docker, credenciais e discos externos |
 
-Generated artifacts are deleted permanently to recover disk space. Every run is
-recorded locally at `~/Library/Logs/CleanMyMac/clean-my-mac.log`.
+A inspeção de processos falha de forma fechada: se o macOS não permitir
+confirmar que um projeto está inativo, o alvo é preservado. O Git é comparado
+antes e depois da remoção. Falhas e recriações entram no resultado da execução.
 
-Before each artifact removal, the app checks the working directories of all
-current-user processes. This protects projects being used by terminals, Codex,
-Claude Code and other development tools, not only Node or Python processes.
+> O teto de 80% é **best-effort**. Se não existir espaço regenerável suficiente,
+> o aplicativo alerta e preserva dados pessoais e projetos ativos. Ele não
+> encerra agentes nem amplia sozinho a fronteira de exclusão.
 
-## Install
+## O que mudou na v1.1.1
 
-Open the [download page](https://luisroquette.github.io/clean-my-mac/#download), complete the contact form, unzip the released file, and move **Clean My Mac.app** to Applications.
+- Gatilhos alinhados ao percentual visível na interface.
+- Retry de emergência reduzido de 15 para 2 minutos a partir de 95%.
+- Proteção ampliada de Node/Python para todos os processos do utilizador.
+- Nova verificação de atividade imediatamente antes de cada remoção.
+- Logs explícitos para gatilho automático, leitura de disco e falhas verificadas.
 
-The free build is ad-hoc signed, not Apple-notarized. On first launch:
+## Instalação
+
+1. Abra a [página oficial de download](https://luisroquette.github.io/clean-my-mac/#download).
+2. Preencha nome, WhatsApp e e-mail para liberar o ZIP gratuito.
+3. Mova **Clean My Mac.app** para `Aplicativos`.
+4. Na primeira execução, rode:
 
 ```bash
 xattr -dr com.apple.quarantine "/Applications/Clean My Mac.app"
 open "/Applications/Clean My Mac.app"
 ```
 
-The prebuilt release targets Apple silicon and requires macOS 14 or later.
+O build atual requer **macOS 14+**, processador **Apple silicon** e usa assinatura
+ad-hoc. Ainda não há notarização Apple.
 
-## Use
+## Uso
 
-1. Find the disk icon in the top-right menu bar, beside Wi-Fi and the clock.
-2. Leave **Automatic cleanup** enabled for the 78% preventive guard.
-3. Leave **Open at Login** enabled for continuous monitoring.
-4. Use **Check now** or **Clean now** whenever you want an immediate run.
+1. Procure o ícone de disco na barra superior do macOS, perto do Wi-Fi e relógio.
+2. Mantenha **Limpeza automática** ativada.
+3. Mantenha **Abrir ao iniciar sessão** ativado.
+4. Use **Verificar agora** ou **Limpar agora** para uma execução imediata.
 
-The current app interface is in Brazilian Portuguese.
+O log fica em:
 
-## Build from source
+```text
+~/Library/Logs/CleanMyMac/clean-my-mac.log
+```
+
+[Assistir à demonstração real de 12 segundos](docs/video/clean-my-mac-demo.mp4)
+
+## Arquitetura pequena e nativa
+
+| Componente | Responsabilidade |
+|---|---|
+| `StorageMonitor` | Amostragem, notificações, login e orquestração |
+| `StoragePolicy` | Limites, cooldown normal e retry emergencial |
+| `SafeCleaner` | Candidatos, processos, Git, remoção e auditoria |
+| `MenuBarView` | Interface SwiftUI na barra do macOS |
+
+Swift 6, SwiftUI, AppKit, ServiceManagement e UserNotifications. Nenhuma
+dependência de runtime, Electron, conta ou serviço de nuvem.
+
+## Compilar e verificar
 
 ```bash
 git clone https://github.com/luisroquette/clean-my-mac.git
@@ -90,35 +144,32 @@ cd clean-my-mac
 open "dist/Clean My Mac.app"
 ```
 
-The project uses Swift 6, SwiftUI, AppKit and native macOS services. It has no
-third-party runtime dependencies.
+O preflight canônico executa validação do `Info.plist`, testes do modelo web,
+E2E desktop/mobile, testes Swift, build de produção, verificação da versão
+pública e assinatura do aplicativo.
 
-## Development roots
+## Escopo de projetos
 
-The generated-artifact scan is limited to `~/Projects`, `~/Projetos`,
-`~/Developer`, `~/Code`, plus direct folders in the home directory that contain
-either `.git` or `package.json`. Hidden folders and personal macOS folders are
-excluded before traversal.
+A busca de artefatos cobre `~/Projects`, `~/Projetos`, `~/Developer`, `~/Code` e
+pastas diretas da home que contenham `.git` ou `package.json`. Pastas ocultas,
+áreas pessoais do macOS e caminhos protegidos são excluídos antes da varredura.
 
-## Privacy
+## Privacidade
 
-Storage samples, preferences and cleanup logs remain on the Mac. The app has no
-analytics SDK, network client, account system or remote backend.
+Amostras de armazenamento, preferências e logs permanecem no Mac. O aplicativo
+não contém cliente de rede, analytics, telemetria, conta ou backend remoto.
 
-## Known limitations
+## Limitações conhecidas
 
-- The 80% ceiling is best-effort: if safe regenerable data is insufficient, the app alerts instead of deleting personal files.
-- The prebuilt release is Apple-silicon-only and not notarized.
-- The interface is currently Brazilian Portuguese.
-- Projects outside the documented roots are not scanned.
-- Package caches are cleaned only when their command-line tools are installed.
+- O teto de 80% depende da existência de artefatos seguros e inativos.
+- Projetos fora das raízes documentadas não são varridos.
+- Caches só são limpos quando a respectiva ferramenta está instalada.
+- O build distribuído é exclusivo para Apple silicon e ainda não é notarizado.
+- A interface atual está em português do Brasil.
 
-## License
+## Projeto aberto
 
-[MIT](LICENSE) © 2026 Luis Roquette.
+[MIT](LICENSE) © 2026 [Luis Roquette](https://github.com/luisroquette).
 
----
-
-Clean My Mac is an independent open-source utility. It is not affiliated with,
-sponsored by, or endorsed by MacPaw. “CleanMyMac” is a trademark of its
-respective owner.
+Clean My Mac é um software independente. Não possui afiliação, patrocínio ou
+endosso da MacPaw. “CleanMyMac” é marca de seu respectivo proprietário.
