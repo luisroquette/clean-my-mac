@@ -4,12 +4,16 @@ import Foundation
 struct CleanupResult: Sendable {
     let removedTargets: Int
     let blockedTargets: Int
+    let failedTargets: Int
     let freedBytes: UInt64
 
     var summary: String {
         let freed = ByteCountFormatter.string(fromByteCount: Int64(freedBytes), countStyle: .file)
+        if failedTargets > 0 {
+            return "\(freed) liberados; \(failedTargets) falhas verificadas. Nova tentativa agendada."
+        }
         if blockedTargets > 0 {
-            return "\(freed) liberados; \(blockedTargets) alvos ativos preservados."
+            return "\(freed) liberados; \(blockedTargets) projetos ativos preservados."
         }
         return "\(freed) liberados com segurança."
     }
@@ -38,10 +42,15 @@ enum SafeCleaner {
         CleanupLog(url: logURL).append("MONITOR app iniciado")
     }
 
+    static func record(_ message: String) {
+        CleanupLog(url: logURL).append(message)
+    }
+
     private static func runSynchronously() -> CleanupResult {
         let before = (try? StorageReader.read().availableBytes) ?? 0
         var removedTargets = 0
         var blockedTargets = 0
+        var failedTargets = 0
         let log = CleanupLog(url: logURL)
         log.append("START armazenamento seguro")
 
@@ -49,12 +58,14 @@ enum SafeCleaner {
         let artifactResult = cleanGeneratedArtifacts(log: log)
         removedTargets += artifactResult.removed
         blockedTargets += artifactResult.blocked
+        failedTargets += artifactResult.failed
         let after = (try? StorageReader.read().availableBytes) ?? before
         let freed = after > before ? after - before : 0
-        log.append("END liberados=\(freed) removidos=\(removedTargets) bloqueados=\(blockedTargets)")
+        log.append("END liberados=\(freed) removidos=\(removedTargets) bloqueados=\(blockedTargets) falhas=\(failedTargets)")
         return CleanupResult(
             removedTargets: removedTargets,
             blockedTargets: blockedTargets,
+            failedTargets: failedTargets,
             freedBytes: freed
         )
     }
@@ -75,8 +86,7 @@ enum SafeCleaner {
         }
     }
 
-    private static func cleanGeneratedArtifacts(log: CleanupLog) -> (removed: Int, blocked: Int) {
-        let activeDirectories = activeWorkingDirectories()
+    private static func cleanGeneratedArtifacts(log: CleanupLog) -> (removed: Int, blocked: Int, failed: Int) {
         let sizedCandidates = artifactCandidates().compactMap { candidate -> (URL, Int)? in
             let result = run("/usr/bin/du", ["-sk", candidate.path])
             guard result.code == 0,
@@ -93,6 +103,7 @@ enum SafeCleaner {
 
         var removed = 0
         var blocked = 0
+        var failed = 0
 
         for (target, sizeKiB) in sizedCandidates {
             guard let gitRoot = gitRoot(for: target) else {
@@ -101,6 +112,11 @@ enum SafeCleaner {
             }
             guard run("/usr/bin/git", ["-C", gitRoot.path, "check-ignore", "-q", "--", target.path]).code == 0 else {
                 log.append("SKIP alvo não ignorado pelo Git: \(target.path)")
+                continue
+            }
+            guard let activeDirectories = activeWorkingDirectories() else {
+                blocked += 1
+                log.append("BLOCK inspeção de processos indisponível: \(target.path)")
                 continue
             }
             if activeDirectories.contains(where: { CleanupPolicy.pathsOverlap($0, gitRoot.path) }) {
@@ -120,19 +136,21 @@ enum SafeCleaner {
             do {
                 try FileManager.default.removeItem(at: target)
             } catch {
+                failed += 1
                 log.append("ERROR remoção: \(target.path) \(error.localizedDescription)")
                 continue
             }
 
             let statusAfter = run("/usr/bin/git", ["-C", gitRoot.path, "status", "--porcelain=v1", "-z"]).output
             guard statusBefore == statusAfter, !FileManager.default.fileExists(atPath: target.path) else {
+                failed += 1
                 log.append("ERROR verificação pós-limpeza: \(target.path)")
-                break
+                continue
             }
             removed += 1
             log.append("REMOVED \(target.path) sizeKiB=\(sizeKiB)")
         }
-        return (removed, blocked)
+        return (removed, blocked, failed)
     }
 
     private static func artifactCandidates() -> [URL] {
@@ -191,13 +209,11 @@ enum SafeCleaner {
         return results
     }
 
-    private static func activeWorkingDirectories() -> [String] {
+    private static func activeWorkingDirectories() -> [String]? {
         let result = run("/usr/sbin/lsof", [
-            "-a", "-d", "cwd", "-c", "node", "-c", "npm", "-c", "npx", "-c", "bun",
-            "-c", "deno", "-c", "vite", "-c", "vitest", "-c", "next", "-c", "webpack",
-            "-c", "turbo", "-c", "electron", "-c", "python", "-c", "python3", "-Fn",
+            "-a", "-u", NSUserName(), "-d", "cwd", "-Fn",
         ])
-        guard result.code == 0 else { return [] }
+        guard result.code == 0 else { return nil }
         return result.output.split(separator: "\n").compactMap { line in
             line.first == "n" ? String(line.dropFirst()) : nil
         }

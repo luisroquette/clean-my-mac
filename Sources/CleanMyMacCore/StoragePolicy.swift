@@ -28,17 +28,19 @@ public enum StoragePolicy {
     public static let warningThreshold = 0.75
     public static let cleanupThreshold = 0.78
     public static let hardLimit = 0.80
+    public static let emergencyThreshold = 0.95
     public static let warningResetThreshold = 0.73
     public static let cleanupCooldown: TimeInterval = 15 * 60
+    public static let emergencyCleanupCooldown: TimeInterval = 2 * 60
 
     public static func level(for usedFraction: Double) -> StorageLevel {
-        if usedFraction >= cleanupThreshold { return .critical }
-        if usedFraction >= warningThreshold { return .warning }
+        if reaches(usedFraction, threshold: cleanupThreshold) { return .critical }
+        if reaches(usedFraction, threshold: warningThreshold) { return .warning }
         return .normal
     }
 
     public static func shouldResetWarning(for usedFraction: Double) -> Bool {
-        usedFraction < warningResetThreshold
+        !reaches(usedFraction, threshold: warningResetThreshold)
     }
 
     public static func shouldRunAutomaticCleanup(
@@ -48,9 +50,16 @@ public enum StoragePolicy {
         lastCleanupAt: Date?,
         now: Date = Date()
     ) -> Bool {
-        guard enabled, !isCleaning, usedFraction >= cleanupThreshold else { return false }
+        guard enabled, !isCleaning, reaches(usedFraction, threshold: cleanupThreshold) else { return false }
         guard let lastCleanupAt else { return true }
-        return now.timeIntervalSince(lastCleanupAt) >= cleanupCooldown
+        let cooldown = reaches(usedFraction, threshold: emergencyThreshold)
+            ? emergencyCleanupCooldown
+            : cleanupCooldown
+        return now.timeIntervalSince(lastCleanupAt) >= cooldown
+    }
+
+    private static func reaches(_ usedFraction: Double, threshold: Double) -> Bool {
+        Int((usedFraction * 100).rounded()) >= Int((threshold * 100).rounded())
     }
 }
 
