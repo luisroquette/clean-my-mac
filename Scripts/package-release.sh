@@ -9,5 +9,9 @@ cd "$project_dir"
 ./Scripts/preflight.sh
 /bin/mkdir -p release
 /usr/bin/ditto -c -k --sequesterRsrc --keepParent "dist/Clean My Mac.app" "$archive"
-/usr/bin/shasum -a 256 "$archive" > "$archive.sha256"
+(cd release && /usr/bin/shasum -a 256 "Clean-My-Mac-$version.zip" > "Clean-My-Mac-$version.zip.sha256")
+[[ "$(<"$archive.sha256")" == *"  Clean-My-Mac-$version.zip" ]] || {
+    print -u2 "Checksum contains a non-portable path"
+    exit 1
+}
 print "$archive"
