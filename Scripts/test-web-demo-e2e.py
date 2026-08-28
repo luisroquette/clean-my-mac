@@ -4,7 +4,7 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -57,9 +57,8 @@ def run_e2e(url):
         assert page.locator("[data-state]").inner_text() == "95% CLEANUP"
 
         page.keyboard.press("Enter")
-        page.wait_for_timeout(4400)
+        expect(page.locator("[data-state]")).to_have_text("OPTIMIZED", timeout=10_000)
         assert float(page.locator("#storage").input_value()) == 84
-        assert page.locator("[data-state]").inner_text() == "OPTIMIZED"
         assert page.locator(".cleanup-timeline li.is-done").count() == 4
         assert not console_errors, console_errors
         assert not page_errors, page_errors
@@ -67,9 +66,8 @@ def run_e2e(url):
 
         reduced, page = open_demo(browser, url, viewport={"width": 1440, "height": 1000}, reduced_motion="reduce")
         set_storage(page, 96)
-        page.wait_for_timeout(1000)
+        expect(page.locator("[data-state]")).to_have_text("OPTIMIZED", timeout=3_000)
         assert float(page.locator("#storage").input_value()) == 84
-        assert page.locator("[data-state]").inner_text() == "OPTIMIZED"
         reduced.close()
 
         mobile, page = open_demo(browser, url, viewport={"width": 390, "height": 844}, device_scale_factor=1)
