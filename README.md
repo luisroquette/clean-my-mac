@@ -1,6 +1,6 @@
 # Clean My Mac
 
-**A native macOS menu-bar guard that warns at 75% and starts safe cleanup at 78% to protect an 80% SSD ceiling.**
+**Autonomous SSD protection for people who build with Codex, Claude Code and coding agents.**
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/product%20page-open-F28C38?style=flat-square" alt="Open the Clean My Mac product page"></a>
@@ -9,9 +9,10 @@
   <img src="https://img.shields.io/badge/macOS-14%2B-1D1D1F?style=flat-square" alt="macOS 14 or later">
 </p>
 
-Clean My Mac watches the data volume every minute. It sends one warning when
-usage reaches 75%. If automatic cleanup is enabled, it acts at 78%, then retries
-after 15 minutes while storage remains under pressure.
+Coding agents move fast, but parallel worktrees, dependency trees, builds and
+tool caches can quietly consume the entire SSD. Clean My Mac watches the data
+volume every minute, warns at 75%, and automatically cleans narrowly
+allow-listed, regenerable development artifacts at 78%.
 
 No account. No telemetry. No cloud service. Native SwiftUI, not Electron.
 
@@ -21,14 +22,25 @@ No account. No telemetry. No cloud service. Native SwiftUI, not Electron.
 
 ## Why it exists
 
-Disk pressure usually becomes visible too late: builds fail, updates stop, and
-the next urgent task begins with manual folder hunting. Clean My Mac turns that
-failure into four predictable guardrails:
+Codex and Claude Code can leave several gigabytes behind after a task is done:
+worktrees, `node_modules`, `.next` output and package-manager caches. Disk
+pressure becomes visible only when the next build fails or an update stops.
+Clean My Mac turns that AI-development failure mode into four guardrails:
 
 1. **75% used:** visible menu-bar state and a macOS notification.
 2. **78% used:** optional automatic cleanup of narrowly allow-listed data.
 3. **80% used:** hard-limit alert if safe cleanup cannot recover enough space.
 4. **Below 73%:** the warning rearms for the next storage cycle.
+
+## Built for AI coding workflows
+
+This is not a broad PC-maintenance utility. CCleaner and generic cleaners scan
+the operating system; Clean My Mac focuses on the technical residue produced by
+coding agents. It checks Git state, active development processes and a strict
+allow list before removing artifacts that the project can rebuild.
+
+Install it once, keep automatic cleanup enabled, and let your agents work. You
+can also trigger the same safe cleanup with one click from the macOS menu bar.
 
 ## Safety contract
 
