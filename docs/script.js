@@ -1,5 +1,7 @@
 const section = document.querySelector('[data-pressure]');
 const slider = document.querySelector('#storage');
+const nav = document.querySelector('[data-nav]');
+const pageProgress = document.querySelector('[data-page-progress]');
 
 const states = {
   normal: ['NORMAL', 'Keep watching.', 'Storage is below the warning threshold. No action is taken.'],
@@ -22,3 +24,13 @@ function updatePressure() {
 
 slider.addEventListener('input', updatePressure);
 updatePressure();
+
+function updateChrome() {
+  const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = scrollable > 0 ? window.scrollY / scrollable : 0;
+  pageProgress.style.transform = `scaleX(${Math.min(Math.max(progress, 0), 1)})`;
+  nav.classList.toggle('is-scrolled', window.scrollY > 24);
+}
+
+window.addEventListener('scroll', updateChrome, { passive: true });
+updateChrome();

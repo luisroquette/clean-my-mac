@@ -14,22 +14,27 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://luisroquette.github.io/clean-my-mac/">
   <link rel="icon" href="img/app-icon.svg" type="image/svg+xml">
+  <link rel="preload" href="img/storage-hero.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="polish.css">
   <title>Clean My Mac — Automatic storage protection</title>
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Clean My Mac","operatingSystem":"macOS 14 or later on Apple silicon","applicationCategory":"UtilitiesApplication","softwareVersion":"1.0.0","description":"A native menu-bar guard that warns at 90% disk usage and can safely clean regenerable developer data at 95%.","downloadUrl":"https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip","license":"https://opensource.org/license/mit","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Luis Roquette","url":"https://github.com/luisroquette"}}
   </script>
 </head>
 <body>
+  <div class="page-progress" aria-hidden="true"><i data-page-progress></i></div>
   <a class="skip-link" href="#main">Skip to content</a>
-  <header class="nav">
+  <header class="nav" data-nav>
     <a class="brand" href="#top"><img src="img/app-icon.svg" alt="" width="36" height="36"><span>Clean My Mac</span></a>
     <nav aria-label="Primary navigation"><a href="#proof">How it works</a><a href="#safety">Safety</a><a href="https://github.com/luisroquette/clean-my-mac">Source</a><a class="nav-cta" href="https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip">Download free</a></nav>
   </header>
 
   <main id="main">
     <section class="hero" id="top">
-      <img class="hero-art" src="img/storage-hero.webp" alt="" width="1672" height="941">
+      <img class="hero-art" src="img/storage-hero.webp" alt="" width="1672" height="941" fetchpriority="high" decoding="async">
+      <span class="hero-coordinate coordinate-top" aria-hidden="true">VOLUME / DATA</span>
+      <span class="hero-coordinate coordinate-side" aria-hidden="true">LOCAL MONITOR · 5 MIN SAMPLE</span>
       <div class="hero-copy reveal">
         <p class="eyebrow"><i></i> Native Swift · Local-first · Free</p>
         <h1>Your disk fills quietly.<br><em>This notices first.</em></h1>
@@ -41,16 +46,18 @@
         <p class="micro">macOS 14+ · No account · No telemetry · MIT licensed</p>
       </div>
       <figure class="app-shot reveal">
+        <div class="menu-chip" aria-hidden="true"><img src="img/app-icon.svg" alt="" width="24" height="24"><strong>91%</strong><span>STORAGE</span><i></i></div>
         <span class="shot-label">LIVE AT 91%</span>
-        <img src="img/app-popover.webp" alt="Clean My Mac showing 91% storage used, 44.73 GB free, and enabled automatic cleanup" width="762" height="758">
+        <img src="img/app-popover.webp" alt="Clean My Mac showing 91% storage used, 44.73 GB free, and enabled automatic cleanup" width="762" height="758" fetchpriority="high" decoding="async">
+        <figcaption>Actual application interface · no staged dashboard</figcaption>
       </figure>
     </section>
 
     <section class="metrics" aria-label="Product thresholds">
-      <div><strong>90%</strong><span>one clear warning</span></div>
-      <div><strong>95%</strong><span>optional cleanup</span></div>
-      <div><strong>5 min</strong><span>between checks</span></div>
-      <div><strong>0</strong><span>telemetry events</span></div>
+      <div data-code="01 / ALERT"><strong>90%</strong><span>one clear warning</span></div>
+      <div data-code="02 / CLEAN"><strong>95%</strong><span>optional cleanup</span></div>
+      <div data-code="03 / SAMPLE"><strong>5 min</strong><span>between checks</span></div>
+      <div data-code="04 / PRIVACY"><strong>0</strong><span>telemetry events</span></div>
     </section>
 
     <section class="section pressure" id="proof" data-pressure>
@@ -60,12 +67,12 @@
         <p>Move the storage level. This browser demo mirrors the published policy; it controls nothing on your Mac.</p>
       </div>
       <div class="pressure-card">
-        <div class="gauge"><div class="gauge-value"><strong data-percent>84%</strong><span>USED</span></div></div>
+        <div class="gauge-shell"><span class="gauge-label gauge-label-top">ALERT 90</span><span class="gauge-label gauge-label-bottom">CLEAN 95</span><div class="gauge"><div class="gauge-value"><strong data-percent>84%</strong><span>USED</span></div></div></div>
         <div class="pressure-controls">
           <label for="storage">Simulated storage usage</label>
           <input id="storage" type="range" min="70" max="99" value="84" aria-describedby="decision-copy">
           <div class="ticks"><span>70%</span><span>90% alert</span><span>95% clean</span><span>99%</span></div>
-          <div class="decision"><span data-state>NORMAL</span><h3 data-title>Keep watching.</h3><p id="decision-copy" data-copy>Storage is below the warning threshold. No action is taken.</p></div>
+          <div class="decision" aria-live="polite"><span data-state>NORMAL</span><h3 data-title>Keep watching.</h3><p id="decision-copy" data-copy>Storage is below the warning threshold. No action is taken.</p></div>
         </div>
       </div>
     </section>
@@ -76,7 +83,7 @@
         <article class="may"><span>MAY CLEAN</span><h3>Regenerable data</h3><ul><li>uv, Bun, Deno and Homebrew caches</li><li>Git-ignored <code>node_modules</code> and <code>.next</code> over 100 MB</li><li>Only inactive development projects</li></ul></article>
         <article class="never"><span>NEVER TOUCHES</span><h3>Your actual work</h3><ul><li>Documents, Desktop, Downloads or media libraries</li><li>Git-tracked source, credentials or external volumes</li><li>Trash contents, Docker data or active projects</li></ul></article>
       </div>
-      <p class="safety-note">Every cleanup writes a local audit log. Generated artifacts are permanently deleted only after the safety checks pass.</p>
+      <p class="safety-note">Every cleanup writes a local audit log. Generated artifacts are permanently deleted only after the safety checks pass. <a href="https://github.com/luisroquette/clean-my-mac/blob/main/Sources/CleanMyMac/SafeCleaner.swift">Inspect the exact cleaner →</a></p>
     </section>
 
     <section class="section steps">
@@ -86,7 +93,7 @@
 
     <section class="section demo" id="demo">
       <div class="section-heading"><p class="eyebrow">The real app</p><h2>Watch the entire idea in 12 seconds.</h2></div>
-      <video controls playsinline preload="metadata" poster="img/og-card.png"><source src="video/clean-my-mac-demo.mp4" type="video/mp4">Your browser does not support embedded video.</video>
+      <video controls playsinline preload="metadata" poster="img/video-poster.webp"><source src="video/clean-my-mac-demo.mp4" type="video/mp4">Your browser does not support embedded video.</video>
     </section>
 
     <section class="section install">
