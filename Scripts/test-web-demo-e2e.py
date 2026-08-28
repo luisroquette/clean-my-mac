@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-import socket
-import subprocess
-import sys
-import time
+import threading
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -10,24 +9,9 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def free_port():
-    with socket.socket() as listener:
-        listener.bind(("127.0.0.1", 0))
-        return listener.getsockname()[1]
-
-
-def wait_for_server(port, server):
-    deadline = time.monotonic() + 10
-    while time.monotonic() < deadline:
-        if server.poll() is not None:
-            error = server.stderr.read().decode().strip()
-            raise RuntimeError(f"Demo server exited before startup: {error}")
-        try:
-            with socket.create_connection(("127.0.0.1", port), timeout=0.2):
-                return
-        except OSError:
-            time.sleep(0.1)
-    raise RuntimeError(f"Demo server did not start on port {port}")
+class QuietHandler(SimpleHTTPRequestHandler):
+    def log_message(self, *_):
+        pass
 
 
 def set_storage(page, value):
@@ -98,21 +82,16 @@ def run_e2e(url):
 
 
 def main():
-    port = free_port()
-    server = subprocess.Popen(
-        [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "-d", str(ROOT / "docs")],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-    )
+    handler = partial(QuietHandler, directory=str(ROOT / "docs"))
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
     try:
-        wait_for_server(port, server)
-        run_e2e(f"http://127.0.0.1:{port}/#proof")
+        run_e2e(f"http://127.0.0.1:{server.server_port}/#proof")
     finally:
-        server.terminate()
-        try:
-            server.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            server.kill()
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
     print("Storage Control E2E: OK")
 
 
