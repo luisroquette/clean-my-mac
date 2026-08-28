@@ -4,9 +4,12 @@ import Testing
 
 @Test func thresholdsAndCooldown() {
     #expect(StoragePolicy.level(for: 0.74) == .normal)
+    #expect(StoragePolicy.level(for: 0.745) == .warning)
     #expect(StoragePolicy.level(for: 0.75) == .warning)
+    #expect(StoragePolicy.level(for: 0.775) == .critical)
     #expect(StoragePolicy.level(for: 0.78) == .critical)
     #expect(StoragePolicy.hardLimit == 0.80)
+    #expect(StoragePolicy.emergencyThreshold == 0.95)
     #expect(StoragePolicy.shouldResetWarning(for: 0.72))
 
     let now = Date(timeIntervalSince1970: 100_000)
@@ -32,10 +35,31 @@ import Testing
         now: now
     ))
     #expect(!StoragePolicy.shouldRunAutomaticCleanup(
-        usedFraction: 0.779,
+        usedFraction: 0.774,
         enabled: true,
         isCleaning: false,
         lastCleanupAt: nil,
+        now: now
+    ))
+    #expect(!StoragePolicy.shouldRunAutomaticCleanup(
+        usedFraction: 0.94,
+        enabled: true,
+        isCleaning: false,
+        lastCleanupAt: now.addingTimeInterval(-121),
+        now: now
+    ))
+    #expect(StoragePolicy.shouldRunAutomaticCleanup(
+        usedFraction: 0.945,
+        enabled: true,
+        isCleaning: false,
+        lastCleanupAt: now.addingTimeInterval(-121),
+        now: now
+    ))
+    #expect(!StoragePolicy.shouldRunAutomaticCleanup(
+        usedFraction: 0.97,
+        enabled: false,
+        isCleaning: false,
+        lastCleanupAt: now.addingTimeInterval(-121),
         now: now
     ))
 }

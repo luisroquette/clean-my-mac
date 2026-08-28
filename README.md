@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/product%20page-open-F28C38?style=flat-square" alt="Open the Clean My Mac product page"></a>
-  <a href="https://github.com/luisroquette/clean-my-mac/releases/latest"><img src="https://img.shields.io/badge/version-1.1.0-1D1D1F?style=flat-square" alt="Version 1.1.0"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/releases/latest"><img src="https://img.shields.io/badge/version-1.1.1-1D1D1F?style=flat-square" alt="Version 1.1.1"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1D1D1F?style=flat-square" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-1D1D1F?style=flat-square" alt="macOS 14 or later">
 </p>
@@ -30,7 +30,8 @@ Clean My Mac turns that AI-development failure mode into four guardrails:
 1. **75% used:** visible menu-bar state and a macOS notification.
 2. **78% used:** optional automatic cleanup of narrowly allow-listed data.
 3. **80% used:** hard-limit alert if safe cleanup cannot recover enough space.
-4. **Below 73%:** the warning rearms for the next storage cycle.
+4. **95% used:** emergency retries every 2 minutes instead of every 15 minutes.
+5. **Below 73%:** the warning rearms for the next storage cycle.
 
 ## Built for AI coding workflows
 
@@ -48,11 +49,15 @@ can also trigger the same safe cleanup with one click from the macOS menu bar.
 |---|---|
 | npm, uv, Bun, Deno and Homebrew caches when those tools are installed | Documents, Desktop, Downloads, Photos, Music, Movies or Public folders |
 | `node_modules` and `.next` directories of 100 MB or more | Git-tracked or non-ignored project content |
-| Only generated folders inside a Git repository and ignored by Git | Artifacts belonging to an active Node/Python development process |
+| Only generated folders inside a Git repository and ignored by Git | Artifacts belonging to a project used by any current-user process |
 | Only after checking Git status before and after cleanup | Trash contents, Docker data, credentials, source files or external volumes |
 
 Generated artifacts are deleted permanently to recover disk space. Every run is
 recorded locally at `~/Library/Logs/CleanMyMac/clean-my-mac.log`.
+
+Before each artifact removal, the app checks the working directories of all
+current-user processes. This protects projects being used by terminals, Codex,
+Claude Code and other development tools, not only Node or Python processes.
 
 ## Install
 

@@ -24,7 +24,9 @@ final class StorageMonitor: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        automaticCleanupEnabled = defaults.object(forKey: Keys.automaticCleanup) as? Bool ?? true
+        let cleanupEnabled = defaults.object(forKey: Keys.automaticCleanup) as? Bool ?? true
+        automaticCleanupEnabled = cleanupEnabled
+        defaults.set(cleanupEnabled, forKey: Keys.automaticCleanup)
         warningLatched = defaults.bool(forKey: Keys.warningLatched)
         lastCleanupAt = defaults.object(forKey: Keys.lastCleanupAt) as? Date
 
@@ -85,6 +87,7 @@ final class StorageMonitor: ObservableObject {
             await react(to: sample, allowAutomation: allowAutomation)
         } catch {
             lastAction = "Falha ao ler o disco: \(error.localizedDescription)"
+            SafeCleaner.record("ERROR leitura do disco: \(error.localizedDescription)")
         }
     }
 
@@ -104,9 +107,10 @@ final class StorageMonitor: ObservableObject {
 
             let percent = snapshot?.usedPercent ?? 0
             if percent >= Int(StoragePolicy.hardLimit * 100) {
+                let retryMinutes = percent >= Int(StoragePolicy.emergencyThreshold * 100) ? 2 : 15
                 await notify(
                     title: "SSD acima do limite seguro",
-                    body: "A limpeza segura terminou, mas o disco continua em \(percent)%. Nova tentativa em 15 minutos.",
+                    body: "A limpeza segura terminou, mas o disco continua em \(percent)%. Nova tentativa em \(retryMinutes) minutos.",
                     critical: true
                 )
             } else {
@@ -145,6 +149,7 @@ final class StorageMonitor: ObservableObject {
             isCleaning: isCleaning,
             lastCleanupAt: lastCleanupAt
         ) {
+            SafeCleaner.record("TRIGGER automático uso=\(sample.usedPercent)%")
             await notify(
                 title: "Clean My Mac iniciou a limpeza",
                 body: "O armazenamento chegou a \(sample.usedPercent)%.",
