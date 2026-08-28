@@ -124,4 +124,40 @@ if (typeof window !== 'undefined') {
   };
   window.addEventListener('scroll', updateChrome, { passive: true });
   updateChrome();
+
+  const leadForm = document.querySelector('[data-lead-form]');
+  if (leadForm) {
+    const formWrap = document.querySelector('[data-lead-form-wrap]');
+    const ready = document.querySelector('[data-download-ready]');
+    const downloadLink = document.querySelector('[data-download-link]');
+    const status = leadForm.querySelector('[data-form-status]');
+    const submit = leadForm.querySelector('button[type="submit"]');
+
+    leadForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!leadForm.reportValidity() || submit.disabled) return;
+      submit.disabled = true;
+      status.textContent = 'Registering your download…';
+      status.dataset.kind = 'pending';
+
+      try {
+        const fields = new FormData(leadForm);
+        const response = await fetch('https://cfgauss.com.br/api/lead/clean-my-mac', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.fromEntries(fields))
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success || !result.downloadUrl) throw new Error(result.error || 'Download could not be unlocked.');
+        downloadLink.href = result.downloadUrl;
+        formWrap.hidden = true;
+        ready.hidden = false;
+        ready.focus();
+      } catch (error) {
+        status.textContent = error.message || 'Download could not be unlocked. Try again.';
+        status.dataset.kind = 'error';
+        submit.disabled = false;
+      }
+    });
+  }
 }

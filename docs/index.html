@@ -27,7 +27,7 @@
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="nav" data-nav>
     <a class="brand" href="#top"><img src="img/app-icon.svg" alt="" width="36" height="36"><span>Clean My Mac</span></a>
-    <nav aria-label="Primary navigation"><a href="#proof">How it works</a><a href="#safety">Safety</a><a href="https://github.com/luisroquette/clean-my-mac">Source</a><a class="nav-cta" href="https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip">Download free</a></nav>
+    <nav aria-label="Primary navigation"><a href="#proof">How it works</a><a href="#safety">Safety</a><a href="https://github.com/luisroquette/clean-my-mac">Source</a><a class="nav-cta" href="#download" data-download-cta>Download free</a></nav>
   </header>
 
   <main id="main">
@@ -40,7 +40,7 @@
         <h1>Your disk fills quietly.<br><em>This notices first.</em></h1>
         <p class="lede">A tiny menu-bar guard warns you at 90% storage and, if you choose, cleans only safe, regenerable developer data at 95%.</p>
         <div class="actions">
-          <a class="button primary" href="https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip"><span>Download for macOS</span><small>v1.0.0 · Apple silicon</small></a>
+          <a class="button primary" href="#download" data-download-cta><span>Download for macOS</span><small>v1.0.0 · Apple silicon</small></a>
           <a class="button secondary" href="#demo">See the real app ↓</a>
         </div>
         <p class="micro">macOS 14+ · No account · No telemetry · MIT licensed</p>
@@ -140,9 +140,29 @@
       <video controls playsinline preload="metadata" poster="img/video-poster.webp"><source src="video/clean-my-mac-demo.mp4" type="video/mp4">Your browser does not support embedded video.</video>
     </section>
 
-    <section class="section install">
-      <div><p class="eyebrow">Free and open source</p><h2>Give your Mac a storage guard.</h2><p>The app is ad-hoc signed and not notarized yet. The source and every deletion rule are public.</p></div>
-      <div class="install-actions"><a class="button primary" href="https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip"><span>Download Clean My Mac</span><small>Free · v1.0.0</small></a><a href="https://github.com/luisroquette/clean-my-mac#install">Installation instructions →</a></div>
+    <section class="section install" id="download">
+      <div><p class="eyebrow">Free and open source</p><h2>Give your Mac a storage guard.</h2><p>The app is ad-hoc signed and not notarized yet. The source and every deletion rule are public.</p><a class="install-help" href="https://github.com/luisroquette/clean-my-mac#install">Installation instructions →</a></div>
+      <div class="download-gate">
+        <div data-lead-form-wrap>
+          <span class="gate-code">DOWNLOAD ACCESS / 01</span>
+          <h3>Where should we send product updates?</h3>
+          <p id="lead-privacy">Enter your contact details to unlock the free download. CF Gauss stores them in its commercial pipeline and may contact you about Clean My Mac.</p>
+          <form data-lead-form aria-describedby="lead-privacy">
+            <label>Name<input name="name" autocomplete="name" minlength="2" maxlength="80" required></label>
+            <label>WhatsApp<input name="whatsapp" type="tel" inputmode="tel" autocomplete="tel" minlength="10" maxlength="20" placeholder="(11) 99999-9999" required></label>
+            <label>Email<input name="email" type="email" autocomplete="email" maxlength="120" placeholder="you@example.com" required></label>
+            <label class="lead-honeypot" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+            <button class="button primary" type="submit"><span>Unlock free download</span><small>v1.0.0 · Apple silicon</small></button>
+            <p class="form-status" data-form-status role="status" aria-live="polite"></p>
+          </form>
+        </div>
+        <div class="download-ready" data-download-ready hidden tabindex="-1">
+          <span class="gate-code">ACCESS GRANTED / 02</span>
+          <h3>Your download is ready.</h3>
+          <p>Your contact was registered. The file is a ZIP containing the macOS app.</p>
+          <a class="button primary" data-download-link href="#"><span>Download Clean My Mac</span><small>Free · v1.0.0</small></a>
+        </div>
+      </div>
     </section>
   </main>
 

@@ -60,9 +60,36 @@ def run_e2e(url):
         expect(page.locator("[data-state]")).to_have_text("OPTIMIZED", timeout=10_000)
         assert float(page.locator("#storage").input_value()) == 84
         assert page.locator(".cleanup-timeline li.is-done").count() == 4
+        assert page.locator('[data-download-cta][href="#download"]').count() == 2
+        assert page.locator('a[href*="releases/latest/download"]').count() == 0
+
+        download_url = "https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip"
+        page.route(
+            "https://cfgauss.com.br/api/lead/clean-my-mac",
+            lambda route: route.fulfill(status=200, content_type="application/json", body=f'{{"success":true,"downloadUrl":"{download_url}"}}'),
+        )
+        page.locator('[data-lead-form] input[name="name"]').fill("Ana Silva")
+        page.locator('[data-lead-form] input[name="whatsapp"]').fill("11999998888")
+        page.locator('[data-lead-form] input[name="email"]').fill("ana@example.com")
+        page.locator('[data-lead-form] button[type="submit"]').click()
+        expect(page.locator("[data-download-ready]")).to_be_visible()
+        expect(page.locator("[data-download-link]")).to_have_attribute("href", download_url)
         assert not console_errors, console_errors
         assert not page_errors, page_errors
         context.close()
+
+        failed, page = open_demo(browser, url, viewport={"width": 1440, "height": 1000})
+        page.route(
+            "https://cfgauss.com.br/api/lead/clean-my-mac",
+            lambda route: route.fulfill(status=503, content_type="application/json", body='{"error":"Trello unavailable"}'),
+        )
+        page.locator('[data-lead-form] input[name="name"]').fill("Ana Silva")
+        page.locator('[data-lead-form] input[name="whatsapp"]').fill("11999998888")
+        page.locator('[data-lead-form] input[name="email"]').fill("ana@example.com")
+        page.locator('[data-lead-form] button[type="submit"]').click()
+        expect(page.locator("[data-form-status]")).to_have_text("Trello unavailable")
+        expect(page.locator("[data-download-ready]")).to_be_hidden()
+        failed.close()
 
         reduced, page = open_demo(browser, url, viewport={"width": 1440, "height": 1000}, reduced_motion="reduce")
         set_storage(page, 96)
