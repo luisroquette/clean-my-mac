@@ -30,8 +30,8 @@ public enum StoragePolicy {
     public static let hardLimit = 0.80
     public static let emergencyThreshold = 0.95
     public static let warningResetThreshold = 0.73
-    public static let cleanupCooldown: TimeInterval = 15 * 60
-    public static let emergencyCleanupCooldown: TimeInterval = 2 * 60
+    public static let cleanupCooldown: TimeInterval = 5 * 60
+    public static let hardLimitCleanupCooldown: TimeInterval = 60
 
     public static func level(for usedFraction: Double) -> StorageLevel {
         if reaches(usedFraction, threshold: cleanupThreshold) { return .critical }
@@ -52,10 +52,15 @@ public enum StoragePolicy {
     ) -> Bool {
         guard enabled, !isCleaning, reaches(usedFraction, threshold: cleanupThreshold) else { return false }
         guard let lastCleanupAt else { return true }
-        let cooldown = reaches(usedFraction, threshold: emergencyThreshold)
-            ? emergencyCleanupCooldown
-            : cleanupCooldown
-        return now.timeIntervalSince(lastCleanupAt) >= cooldown
+        return now.timeIntervalSince(lastCleanupAt) >= cleanupCooldown(for: usedFraction)
+    }
+
+    public static func cleanupCooldown(for usedFraction: Double) -> TimeInterval {
+        isAtOrAboveHardLimit(usedFraction) ? hardLimitCleanupCooldown : cleanupCooldown
+    }
+
+    public static func isAtOrAboveHardLimit(_ usedFraction: Double) -> Bool {
+        reaches(usedFraction, threshold: hardLimit)
     }
 
     private static func reaches(_ usedFraction: Double, threshold: Double) -> Bool {

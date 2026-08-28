@@ -66,7 +66,7 @@ final class StorageMonitor: ObservableObject {
 
         monitoringTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(60))
+                try? await Task.sleep(for: .seconds(30))
                 await self?.sampleNow()
             }
         }
@@ -97,7 +97,10 @@ final class StorageMonitor: ObservableObject {
         lastAction = isAutomatic ? "Limpeza automática iniciada…" : "Limpeza segura iniciada…"
 
         Task {
-            let result = await SafeCleaner.run()
+            let startingFraction = snapshot?.usedFraction ?? 0
+            let result = await SafeCleaner.run(
+                includeNativeCaches: !isAutomatic || !StoragePolicy.isAtOrAboveHardLimit(startingFraction)
+            )
             let now = Date()
             lastCleanupAt = now
             defaults.set(now, forKey: Keys.lastCleanupAt)
@@ -107,7 +110,8 @@ final class StorageMonitor: ObservableObject {
 
             let percent = snapshot?.usedPercent ?? 0
             if percent >= Int(StoragePolicy.hardLimit * 100) {
-                let retryMinutes = percent >= Int(StoragePolicy.emergencyThreshold * 100) ? 2 : 15
+                let fraction = snapshot?.usedFraction ?? StoragePolicy.hardLimit
+                let retryMinutes = Int(StoragePolicy.cleanupCooldown(for: fraction) / 60)
                 await notify(
                     title: "SSD acima do limite seguro",
                     body: "A limpeza segura terminou, mas o disco continua em \(percent)%. Nova tentativa em \(retryMinutes) minutos.",

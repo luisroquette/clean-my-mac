@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/BAIXAR-PARA%20MAC-F28C38?style=for-the-badge&logo=apple&logoColor=white" alt="Baixar Clean My Mac"></a>
-  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.1.2"><img src="https://img.shields.io/badge/VERSÃO-1.1.2-201C19?style=for-the-badge" alt="Versão 1.1.2"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.1.3"><img src="https://img.shields.io/badge/VERSÃO-1.1.3-201C19?style=for-the-badge" alt="Versão 1.1.3"></a>
   <a href="https://github.com/luisroquette/clean-my-mac/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/luisroquette/clean-my-mac/ci.yml?branch=main&style=for-the-badge&label=CI" alt="Status do CI"></a>
 </p>
 
@@ -26,13 +26,13 @@ builds. Depois da entrega, `node_modules`, `.next` e caches de ferramentas
 continuam ocupando o SSD. O problema costuma aparecer tarde: a próxima build
 falha, uma atualização para ou o macOS fica sem espaço de trabalho.
 
-Clean My Mac monitora o volume de dados a cada minuto e age sem interromper o
+Clean My Mac monitora o volume de dados a cada 30 segundos e age sem interromper o
 fluxo:
 
 | 75% | 78% | 80% | 95% |
 |:---:|:---:|:---:|:---:|
-| **Alerta** | **Limpeza autônoma** | **Limite protegido** | **Retry emergencial** |
-| Um aviso claro | Lista segura | Avisa se não bastar | Nova tentativa a cada 2 min |
+| **Alerta** | **Limpeza autônoma** | **Limite protegido** | **Pressão crítica** |
+| Um aviso claro | Lista segura | Retry a cada 1 min | Proteções continuam ativas |
 
 <p align="center">
   <img src="docs/img/readme-storage-control.png" alt="Modelo de decisão do Clean My Mac em 95% de uso do SSD">
@@ -45,7 +45,7 @@ entende projetos de software: Git, worktrees, processos ativos, builds e caches
 regeneráveis. O foco não é “limpar o Mac”; é impedir que agentes de código
 consumam silenciosamente todo o SSD.
 
-- **Autônomo:** inicia com a sessão e verifica o disco a cada minuto.
+- **Autônomo:** inicia com a sessão e verifica o disco a cada 30 segundos.
 - **Um clique:** `Limpar agora` executa a mesma política segura sob demanda.
 - **Local:** nenhum dado, caminho ou evento sai do computador.
 - **Auditável:** código, regras e log de cada execução são públicos ou locais.
@@ -54,19 +54,19 @@ consumam silenciosamente todo o SSD.
 
 ```mermaid
 flowchart LR
-    A[Monitor local\na cada 1 minuto] --> B{Uso do SSD}
+    A[Monitor local\na cada 30 segundos] --> B{Uso do SSD}
     B -->|abaixo de 75%| C[Observar]
     B -->|75%| D[Alertar]
     B -->|78% ou mais| E[Mapear artefatos]
     E --> F{Git ignorado,\nregenerável e inativo?}
     F -->|não| G[Preservar e registrar]
     F -->|sim| H[Remover e verificar]
-    B -->|95% ou mais| I[Retry emergencial\na cada 2 minutos]
+    B -->|80% ou mais| I[Retry automático\na cada 1 minuto]
     I --> E
 ```
 
 O percentual usado pela política é o mesmo número arredondado mostrado na
-interface. Se o aplicativo exibe **95%**, o modo emergencial já está ativo.
+interface. Se o aplicativo exibe **80%**, o retry de proteção já está ativo.
 
 ## Contrato de segurança
 
@@ -85,14 +85,14 @@ antes e depois da remoção. Falhas e recriações entram no resultado da execu�
 > o aplicativo alerta e preserva dados pessoais e projetos ativos. Ele não
 > encerra agentes nem amplia sozinho a fronteira de exclusão.
 
-## O que mudou na v1.1.2
+## O que mudou na v1.1.3
 
+- Varredura segura ampliada para `.next` e `node_modules` em `/private/tmp`.
+- Retry reduzido para 1 minuto assim que o SSD alcança 80%.
+- Monitoramento acelerado de 60 para 30 segundos.
+- Artefatos grandes são removidos antes das rotinas lentas de cache.
+- Temporários `claude-*` continuam permanentemente excluídos da limpeza.
 - A barra do macOS mostra somente o percentual atual, sem ícone redundante.
-- Gatilhos alinhados ao percentual visível na interface.
-- Retry de emergência reduzido de 15 para 2 minutos a partir de 95%.
-- Proteção ampliada de Node/Python para todos os processos do utilizador.
-- Nova verificação de atividade imediatamente antes de cada remoção.
-- Logs explícitos para gatilho automático, leitura de disco e falhas verificadas.
 
 ## Instalação
 

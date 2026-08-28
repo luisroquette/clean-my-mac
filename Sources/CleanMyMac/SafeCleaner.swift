@@ -32,9 +32,9 @@ enum SafeCleaner {
     }
     private static let minimumArtifactKiB = 100 * 1024
 
-    static func run() async -> CleanupResult {
+    static func run(includeNativeCaches: Bool = true) async -> CleanupResult {
         await Task.detached(priority: .utility) {
-            runSynchronously()
+            runSynchronously(includeNativeCaches: includeNativeCaches)
         }.value
     }
 
@@ -46,7 +46,7 @@ enum SafeCleaner {
         CleanupLog(url: logURL).append(message)
     }
 
-    private static func runSynchronously() -> CleanupResult {
+    private static func runSynchronously(includeNativeCaches: Bool) -> CleanupResult {
         let before = (try? StorageReader.read().availableBytes) ?? 0
         var removedTargets = 0
         var blockedTargets = 0
@@ -54,11 +54,15 @@ enum SafeCleaner {
         let log = CleanupLog(url: logURL)
         log.append("START armazenamento seguro")
 
-        cleanNativeCaches(log: log)
         let artifactResult = cleanGeneratedArtifacts(log: log)
         removedTargets += artifactResult.removed
         blockedTargets += artifactResult.blocked
         failedTargets += artifactResult.failed
+        if includeNativeCaches {
+            cleanNativeCaches(log: log)
+        } else {
+            log.append("CACHE limpeza nativa adiada para priorizar o limite de 80%")
+        }
         let after = (try? StorageReader.read().availableBytes) ?? before
         let freed = after > before ? after - before : 0
         log.append("END liberados=\(freed) removidos=\(removedTargets) bloqueados=\(blockedTargets) falhas=\(failedTargets)")
@@ -155,7 +159,8 @@ enum SafeCleaner {
 
     private static func artifactCandidates() -> [URL] {
         let fileManager = FileManager.default
-        var roots = ["Projects", "Projetos", "Developer", "Code"].map { home.appending(path: $0) }
+        var roots = CleanupPolicy.artifactScanRoots(homePath: home.path)
+            .map { URL(filePath: $0, directoryHint: .isDirectory) }
         let excludedTopLevel = Set([
             "Applications", "Desktop", "Documents", "Downloads", "Library", "Movies", "Music",
             "Pictures", "Public", "Arquivos Públicos", "Arquivos Públicos",
@@ -190,14 +195,13 @@ enum SafeCleaner {
             errorHandler: { _, _ in true }
         ) else { return [] }
 
-        let excludedNames = Set([".git", ".claude", ".codex", ".npm", ".npm-global", ".9router", ".vscode", ".Trash", "Library", "Arquivos Públicos", "Arquivos Públicos"])
         var results: [URL] = []
 
         for case let url as URL in enumerator {
             let values = try? url.resourceValues(forKeys: Set(keys))
             guard values?.isDirectory == true else { continue }
             let name = url.lastPathComponent
-            if values?.isSymbolicLink == true || excludedNames.contains(name) {
+            if values?.isSymbolicLink == true || CleanupPolicy.shouldExcludeDirectory(named: name) {
                 enumerator.skipDescendants()
                 continue
             }
