@@ -64,7 +64,7 @@ final class StorageMonitor: ObservableObject {
 
         monitoringTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(300))
+                try? await Task.sleep(for: .seconds(60))
                 await self?.sampleNow()
             }
         }
@@ -103,10 +103,10 @@ final class StorageMonitor: ObservableObject {
             await sampleNow(allowAutomation: false)
 
             let percent = snapshot?.usedPercent ?? 0
-            if percent >= Int(StoragePolicy.cleanupThreshold * 100) {
+            if percent >= Int(StoragePolicy.hardLimit * 100) {
                 await notify(
-                    title: "Clean My Mac precisa de revisão",
-                    body: "A limpeza terminou, mas o disco continua em \(percent)%.",
+                    title: "SSD acima do limite seguro",
+                    body: "A limpeza segura terminou, mas o disco continua em \(percent)%. Nova tentativa em 15 minutos.",
                     critical: true
                 )
             } else {
@@ -159,7 +159,7 @@ final class StorageMonitor: ObservableObject {
             defaults.set(true, forKey: Keys.warningLatched)
             await notify(
                 title: "Armazenamento quase cheio",
-                body: "O disco está em \(sample.usedPercent)%. A limpeza automática começa em 95%.",
+                body: "O disco está em \(sample.usedPercent)%. A limpeza automática começa em 78% para proteger o teto de 80%.",
                 critical: sample.usedFraction >= StoragePolicy.cleanupThreshold
             )
         }

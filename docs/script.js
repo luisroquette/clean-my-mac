@@ -1,8 +1,8 @@
 export function pressureLevel(value) {
-  return value >= 95 ? 'critical' : value >= 90 ? 'warning' : 'normal';
+  return value >= 78 ? 'critical' : value >= 75 ? 'warning' : 'normal';
 }
 
-export function cleanupValue(start, progress, target = 84) {
+export function cleanupValue(start, progress, target = 72) {
   const safeProgress = Math.min(Math.max(progress, 0), 1);
   const eased = 1 - ((1 - safeProgress) ** 3);
   return Math.round((start + ((target - start) * eased)) * 10) / 10;
@@ -21,8 +21,8 @@ if (section) {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const states = {
     normal: ['NORMAL', 'Keep watching.', 'Storage is below the warning threshold. No action is taken.', 'Storage pressure is normal.'],
-    warning: ['90% ALERT', 'Pressure is rising.', 'The menu-bar icon changes and macOS sends one notification.', 'Storage pressure needs attention.'],
-    critical: ['95% CLEANUP', 'Pressure critical.', 'Automatic safe cleanup will begin using the strict allow list.', 'Cleanup threshold reached.'],
+    warning: ['75% ALERT', 'Pressure is rising.', 'The menu-bar icon changes and macOS sends one notification.', 'Storage pressure needs attention.'],
+    critical: ['78% CLEANUP', 'Pressure critical.', 'Automatic safe cleanup will begin using the strict allow list.', 'Cleanup threshold reached.'],
     cleaning: ['SAFE CLEANUP', 'Pressure is falling.', 'Only allow-listed caches and generated build files are being removed.', 'Safe cleanup is running.'],
     optimized: ['OPTIMIZED', 'Pressure relieved.', 'The browser simulation reached the healthy target without touching personal files.', 'Storage pressure is healthy.']
   };
@@ -64,13 +64,13 @@ if (section) {
 
   function startCleanup() {
     const start = Number(slider.value);
-    if (start < 95 || autoClean.getAttribute('aria-pressed') !== 'true') return;
+    if (start < 78 || autoClean.getAttribute('aria-pressed') !== 'true') return;
     phase = 'cleaning';
 
     if (reducedMotion.matches) {
-      slider.value = '84';
+      slider.value = '72';
       phase = 'optimized';
-      render(84, 1);
+      render(72, 1);
       return;
     }
 
@@ -84,7 +84,7 @@ if (section) {
       if (progress < 1) cleanupFrame = window.requestAnimationFrame(tick);
       else {
         phase = 'optimized';
-        render(84, 1);
+        render(72, 1);
       }
     };
     cleanupFrame = window.requestAnimationFrame(tick);
@@ -92,7 +92,7 @@ if (section) {
 
   function scheduleCleanup() {
     stopCleanup();
-    if (Number(slider.value) >= 95 && autoClean.getAttribute('aria-pressed') === 'true') cleanupTimer = window.setTimeout(startCleanup, 800);
+    if (Number(slider.value) >= 78 && autoClean.getAttribute('aria-pressed') === 'true') cleanupTimer = window.setTimeout(startCleanup, 800);
   }
 
   slider.addEventListener('input', () => {

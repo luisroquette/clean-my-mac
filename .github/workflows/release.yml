@@ -1,0 +1,35 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Verify tag matches version
+        run: test "$GITHUB_REF_NAME" = "v$(cat VERSION)"
+      - name: Install test dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --disable-pip-version-check -r requirements-dev.txt
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - name: Build verified release
+        run: ./Scripts/package-release.sh
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "release/Clean-My-Mac-$(cat VERSION).zip" \
+            "release/Clean-My-Mac-$(cat VERSION).zip.sha256" \
+            "release/Clean-My-Mac.zip" \
+            --verify-tag \
+            --generate-notes \
+            --title "Clean My Mac $(cat VERSION)"
