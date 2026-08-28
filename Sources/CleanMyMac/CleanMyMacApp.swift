@@ -8,7 +8,9 @@ struct CleanMyMacApp: App {
         MenuBarExtra {
             MenuBarView(monitor: monitor)
         } label: {
-            Label(monitor.menuBarTitle, systemImage: monitor.menuBarSymbol)
+            Text(monitor.menuBarTitle)
+                .monospacedDigit()
+                .accessibilityLabel("Clean My Mac: \(monitor.menuBarTitle) do armazenamento usado")
         }
         .menuBarExtraStyle(.window)
     }

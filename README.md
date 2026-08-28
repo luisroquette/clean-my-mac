@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/BAIXAR-PARA%20MAC-F28C38?style=for-the-badge&logo=apple&logoColor=white" alt="Baixar Clean My Mac"></a>
-  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.1.1"><img src="https://img.shields.io/badge/VERSÃO-1.1.1-201C19?style=for-the-badge" alt="Versão 1.1.1"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.1.2"><img src="https://img.shields.io/badge/VERSÃO-1.1.2-201C19?style=for-the-badge" alt="Versão 1.1.2"></a>
   <a href="https://github.com/luisroquette/clean-my-mac/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/luisroquette/clean-my-mac/ci.yml?branch=main&style=for-the-badge&label=CI" alt="Status do CI"></a>
 </p>
 
@@ -85,8 +85,9 @@ antes e depois da remoção. Falhas e recriações entram no resultado da execu�
 > o aplicativo alerta e preserva dados pessoais e projetos ativos. Ele não
 > encerra agentes nem amplia sozinho a fronteira de exclusão.
 
-## O que mudou na v1.1.1
+## O que mudou na v1.1.2
 
+- A barra do macOS mostra somente o percentual atual, sem ícone redundante.
 - Gatilhos alinhados ao percentual visível na interface.
 - Retry de emergência reduzido de 15 para 2 minutos a partir de 95%.
 - Proteção ampliada de Node/Python para todos os processos do utilizador.
