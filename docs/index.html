@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#171411">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Clean My Mac warns at 90% disk usage and safely cleans regenerable developer data at 95%. Free, native, local-first and open source.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Clean My Mac — Stop disk-full emergencies before they start">
+  <meta property="og:description" content="A free native menu-bar guard for Mac storage. Alert at 90%. Optional safe cleanup at 95%. Zero telemetry.">
+  <meta property="og:image" content="https://luisroquette.github.io/clean-my-mac/img/og-card.png">
+  <meta property="og:url" content="https://luisroquette.github.io/clean-my-mac/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://luisroquette.github.io/clean-my-mac/">
+  <link rel="icon" href="img/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <title>Clean My Mac — Automatic storage protection</title>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Clean My Mac","operatingSystem":"macOS 14 or later on Apple silicon","applicationCategory":"UtilitiesApplication","softwareVersion":"1.0.0","description":"A native menu-bar guard that warns at 90% disk usage and can safely clean regenerable developer data at 95%.","downloadUrl":"https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip","license":"https://opensource.org/license/mit","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Luis Roquette","url":"https://github.com/luisroquette"}}
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav">
+    <a class="brand" href="#top"><img src="img/app-icon.svg" alt="" width="36" height="36"><span>Clean My Mac</span></a>
+    <nav aria-label="Primary navigation"><a href="#proof">How it works</a><a href="#safety">Safety</a><a href="https://github.com/luisroquette/clean-my-mac">Source</a><a class="nav-cta" href="https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip">Download free</a></nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <img class="hero-art" src="img/storage-hero.webp" alt="" width="1672" height="941">
+      <div class="hero-copy reveal">
+        <p class="eyebrow"><i></i> Native Swift · Local-first · Free</p>
+        <h1>Your disk fills quietly.<br><em>This notices first.</em></h1>
+        <p class="lede">A tiny menu-bar guard warns you at 90% storage and, if you choose, cleans only safe, regenerable developer data at 95%.</p>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip"><span>Download for macOS</span><small>v1.0.0 · Apple silicon</small></a>
+          <a class="button secondary" href="#demo">See the real app ↓</a>
+        </div>
+        <p class="micro">macOS 14+ · No account · No telemetry · MIT licensed</p>
+      </div>
+      <figure class="app-shot reveal">
+        <span class="shot-label">LIVE AT 91%</span>
+        <img src="img/app-popover.webp" alt="Clean My Mac showing 91% storage used, 44.73 GB free, and enabled automatic cleanup" width="762" height="758">
+      </figure>
+    </section>
+
+    <section class="metrics" aria-label="Product thresholds">
+      <div><strong>90%</strong><span>one clear warning</span></div>
+      <div><strong>95%</strong><span>optional cleanup</span></div>
+      <div><strong>5 min</strong><span>between checks</span></div>
+      <div><strong>0</strong><span>telemetry events</span></div>
+    </section>
+
+    <section class="section pressure" id="proof" data-pressure>
+      <div class="section-heading">
+        <p class="eyebrow">Try the decision model</p>
+        <h2>Two thresholds. No guesswork.</h2>
+        <p>Move the storage level. This browser demo mirrors the published policy; it controls nothing on your Mac.</p>
+      </div>
+      <div class="pressure-card">
+        <div class="gauge"><div class="gauge-value"><strong data-percent>84%</strong><span>USED</span></div></div>
+        <div class="pressure-controls">
+          <label for="storage">Simulated storage usage</label>
+          <input id="storage" type="range" min="70" max="99" value="84" aria-describedby="decision-copy">
+          <div class="ticks"><span>70%</span><span>90% alert</span><span>95% clean</span><span>99%</span></div>
+          <div class="decision"><span data-state>NORMAL</span><h3 data-title>Keep watching.</h3><p id="decision-copy" data-copy>Storage is below the warning threshold. No action is taken.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section safety" id="safety">
+      <div class="section-heading"><p class="eyebrow">The deletion boundary</p><h2>Useful enough to recover space.<br><em>Narrow enough to trust.</em></h2></div>
+      <div class="safety-grid">
+        <article class="may"><span>MAY CLEAN</span><h3>Regenerable data</h3><ul><li>uv, Bun, Deno and Homebrew caches</li><li>Git-ignored <code>node_modules</code> and <code>.next</code> over 100 MB</li><li>Only inactive development projects</li></ul></article>
+        <article class="never"><span>NEVER TOUCHES</span><h3>Your actual work</h3><ul><li>Documents, Desktop, Downloads or media libraries</li><li>Git-tracked source, credentials or external volumes</li><li>Trash contents, Docker data or active projects</li></ul></article>
+      </div>
+      <p class="safety-note">Every cleanup writes a local audit log. Generated artifacts are permanently deleted only after the safety checks pass.</p>
+    </section>
+
+    <section class="section steps">
+      <div class="section-heading"><p class="eyebrow">Set once</p><h2>Storage protection without another dashboard.</h2></div>
+      <div class="step-grid"><article><b>01</b><h3>Open it</h3><p>The disk icon settles into the macOS menu bar and starts at login.</p></article><article><b>02</b><h3>Get warned</h3><p>At 90%, the icon changes and macOS sends one notification.</p></article><article><b>03</b><h3>Recover room</h3><p>At 95%, the optional cleaner runs its strict allow list with a six-hour cooldown.</p></article></div>
+    </section>
+
+    <section class="section demo" id="demo">
+      <div class="section-heading"><p class="eyebrow">The real app</p><h2>Watch the entire idea in 12 seconds.</h2></div>
+      <video controls playsinline preload="metadata" poster="img/og-card.png"><source src="video/clean-my-mac-demo.mp4" type="video/mp4">Your browser does not support embedded video.</video>
+    </section>
+
+    <section class="section install">
+      <div><p class="eyebrow">Free and open source</p><h2>Give your Mac a storage guard.</h2><p>The app is ad-hoc signed and not notarized yet. The source and every deletion rule are public.</p></div>
+      <div class="install-actions"><a class="button primary" href="https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip"><span>Download Clean My Mac</span><small>Free · v1.0.0</small></a><a href="https://github.com/luisroquette/clean-my-mac#install">Installation instructions →</a></div>
+    </section>
+  </main>
+
+  <footer><div><img src="img/app-icon.svg" alt="" width="32" height="32"><strong>Clean My Mac</strong></div><p>Independent open-source software by <a href="https://github.com/luisroquette">Luis Roquette</a>. Not affiliated with or endorsed by MacPaw.</p></footer>
+  <script src="script.js"></script>
+</body>
+</html>
