@@ -497,8 +497,8 @@ body::before {
 
 @keyframes relief-bar {
   0%, 28% { width: 91%; background: #ed8d38; box-shadow: 0 0 16px rgba(237, 141, 56, 0.38); }
-  66%, 82% { width: 84%; background: #6faa7d; box-shadow: 0 0 16px rgba(111, 170, 125, 0.3); }
-  100% { width: 84%; background: #6faa7d; }
+  66%, 82% { width: 72%; background: #6faa7d; box-shadow: 0 0 16px rgba(111, 170, 125, 0.3); }
+  100% { width: 72%; background: #6faa7d; }
 }
 
 @keyframes relief-tense-copy {
@@ -713,7 +713,7 @@ body::before {
 
 .pressure-controls label { margin: 0 0 22px; font-size: 16px; }
 .threshold-control { position: relative; height: 32px; }
-.threshold-track { position: absolute; top: 50%; right: 0; left: 0; display: grid; grid-template-columns: 20fr 5fr 4fr; height: 8px; overflow: hidden; border-radius: 999px; transform: translateY(-50%); }
+.threshold-track { position: absolute; top: 50%; right: 0; left: 0; display: grid; grid-template-columns: 5fr 3fr 21fr; height: 8px; overflow: hidden; border-radius: 999px; transform: translateY(-50%); }
 .threshold-track i:nth-child(1) { background: #6f9a76; }
 .threshold-track i:nth-child(2) { background: #e18736; }
 .threshold-track i:nth-child(3) { background: #d84a3c; }
@@ -871,7 +871,7 @@ body::before {
   right: -0.08em;
   bottom: -0.36em;
   z-index: -1;
-  content: "90→95";
+  content: "75→78→80";
   color: rgba(242, 140, 56, 0.045);
   font-family: var(--serif);
   font-size: clamp(150px, 27vw, 430px);

@@ -62,6 +62,7 @@ enum SafeCleaner {
     private static func cleanNativeCaches(log: CleanupLog) {
         let commands: [([String], [String])] = [
             ([home.appending(path: ".local/bin/uv").path, "/opt/homebrew/bin/uv", "/usr/local/bin/uv"], ["cache", "clean"]),
+            (["/opt/homebrew/bin/npm", "/usr/local/bin/npm"], ["cache", "clean", "--force"]),
             ([home.appending(path: ".bun/bin/bun").path, "/opt/homebrew/bin/bun", "/usr/local/bin/bun"], ["pm", "cache", "rm"]),
             (["/opt/homebrew/bin/deno", "/usr/local/bin/deno"], ["clean"]),
             (["/opt/homebrew/bin/brew", "/usr/local/bin/brew"], ["cleanup", "-s", "--prune=all"]),

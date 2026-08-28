@@ -13,7 +13,7 @@ struct MenuBarView: View {
 
             Toggle("Limpeza automática", isOn: $monitor.automaticCleanupEnabled)
                 .toggleStyle(.switch)
-                .accessibilityHint("Executa a limpeza segura quando o armazenamento chega a 95 por cento")
+                .accessibilityHint("Executa a limpeza segura quando o armazenamento chega a 78 por cento")
 
             Toggle(
                 "Abrir ao iniciar sessão",
@@ -124,9 +124,9 @@ struct MenuBarView: View {
                 .accessibilityValue(monitor.snapshot.map { "\($0.usedPercent) por cento" } ?? "indisponível")
 
             HStack {
-                Label("Alerta em 90%", systemImage: "bell")
+                Label("Alerta em 75%", systemImage: "bell")
                 Spacer()
-                Label("Limpeza em 95%", systemImage: "sparkles")
+                Label("Limpeza em 78%", systemImage: "sparkles")
             }
             .font(.caption2)
             .foregroundStyle(.secondary)

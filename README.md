@@ -1,6 +1,6 @@
 # Clean My Mac
 
-**A native macOS menu-bar guard that warns at 90% disk usage and can clean safe, regenerable data at 95%.**
+**A native macOS menu-bar guard that warns at 75% and starts safe cleanup at 78% to protect an 80% SSD ceiling.**
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/product%20page-open-F28C38?style=flat-square" alt="Open the Clean My Mac product page"></a>
@@ -9,9 +9,9 @@
   <img src="https://img.shields.io/badge/macOS-14%2B-1D1D1F?style=flat-square" alt="macOS 14 or later">
 </p>
 
-Clean My Mac watches the data volume every five minutes. It sends one warning
-when usage reaches 90%. If automatic cleanup is enabled, it acts at 95%, then
-waits at least six hours before another automatic run.
+Clean My Mac watches the data volume every minute. It sends one warning when
+usage reaches 75%. If automatic cleanup is enabled, it acts at 78%, then retries
+after 15 minutes while storage remains under pressure.
 
 No account. No telemetry. No cloud service. Native SwiftUI, not Electron.
 
@@ -23,17 +23,18 @@ No account. No telemetry. No cloud service. Native SwiftUI, not Electron.
 
 Disk pressure usually becomes visible too late: builds fail, updates stop, and
 the next urgent task begins with manual folder hunting. Clean My Mac turns that
-failure into two predictable thresholds:
+failure into four predictable guardrails:
 
-1. **90% used:** visible menu-bar state and a macOS notification.
-2. **95% used:** optional automatic cleanup of narrowly allow-listed data.
-3. **Below 88%:** the warning rearms for the next storage cycle.
+1. **75% used:** visible menu-bar state and a macOS notification.
+2. **78% used:** optional automatic cleanup of narrowly allow-listed data.
+3. **80% used:** hard-limit alert if safe cleanup cannot recover enough space.
+4. **Below 73%:** the warning rearms for the next storage cycle.
 
 ## Safety contract
 
 | It may remove | It never removes |
 |---|---|
-| uv, Bun, Deno and Homebrew caches when those tools are installed | Documents, Desktop, Downloads, Photos, Music, Movies or Public folders |
+| npm, uv, Bun, Deno and Homebrew caches when those tools are installed | Documents, Desktop, Downloads, Photos, Music, Movies or Public folders |
 | `node_modules` and `.next` directories of 100 MB or more | Git-tracked or non-ignored project content |
 | Only generated folders inside a Git repository and ignored by Git | Artifacts belonging to an active Node/Python development process |
 | Only after checking Git status before and after cleanup | Trash contents, Docker data, credentials, source files or external volumes |
@@ -43,7 +44,7 @@ recorded locally at `~/Library/Logs/CleanMyMac/clean-my-mac.log`.
 
 ## Install
 
-Download [`Clean-My-Mac-1.0.0.zip`](https://github.com/luisroquette/clean-my-mac/releases/latest/download/Clean-My-Mac-1.0.0.zip), unzip it, and move **Clean My Mac.app** to Applications.
+Open the [download page](https://luisroquette.github.io/clean-my-mac/#download), complete the contact form, unzip the released file, and move **Clean My Mac.app** to Applications.
 
 The free build is ad-hoc signed, not Apple-notarized. On first launch:
 
@@ -57,7 +58,7 @@ The prebuilt release targets Apple silicon and requires macOS 14 or later.
 ## Use
 
 1. Find the disk icon in the top-right menu bar, beside Wi-Fi and the clock.
-2. Leave **Automatic cleanup** enabled for the 95% guard.
+2. Leave **Automatic cleanup** enabled for the 78% preventive guard.
 3. Leave **Open at Login** enabled for continuous monitoring.
 4. Use **Check now** or **Clean now** whenever you want an immediate run.
 
@@ -89,6 +90,7 @@ analytics SDK, network client, account system or remote backend.
 
 ## Known limitations
 
+- The 80% ceiling is best-effort: if safe regenerable data is insufficient, the app alerts instead of deleting personal files.
 - The prebuilt release is Apple-silicon-only and not notarized.
 - The interface is currently Brazilian Portuguese.
 - Projects outside the documented roots are not scanned.

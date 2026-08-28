@@ -40,25 +40,25 @@ def run_e2e(url):
         page.on("pageerror", lambda error: page_errors.append(str(error)))
 
         assert page.locator("[data-storage-console]").is_visible()
-        assert page.locator("[data-percent]").inner_text() == "84%"
+        assert page.locator("[data-percent]").inner_text() == "72%"
         assert page.locator("[data-state]").inner_text() == "NORMAL"
-        set_storage(page, 89.9)
+        set_storage(page, 74.9)
         assert page.locator("[data-state]").inner_text() == "NORMAL"
-        set_storage(page, 90)
-        assert page.locator("[data-state]").inner_text() == "90% ALERT"
+        set_storage(page, 75)
+        assert page.locator("[data-state]").inner_text() == "75% ALERT"
 
         auto_clean = page.locator("[data-auto-clean]")
         auto_clean.focus()
         page.keyboard.press("Enter")
         assert auto_clean.get_attribute("aria-pressed") == "false"
-        set_storage(page, 96)
+        set_storage(page, 81)
         page.wait_for_timeout(1200)
-        assert float(page.locator("#storage").input_value()) == 96
-        assert page.locator("[data-state]").inner_text() == "95% CLEANUP"
+        assert float(page.locator("#storage").input_value()) == 81
+        assert page.locator("[data-state]").inner_text() == "78% CLEANUP"
 
         page.keyboard.press("Enter")
         expect(page.locator("[data-state]")).to_have_text("OPTIMIZED", timeout=10_000)
-        assert float(page.locator("#storage").input_value()) == 84
+        assert float(page.locator("#storage").input_value()) == 72
         assert page.locator(".cleanup-timeline li.is-done").count() == 4
         assert page.locator('[data-download-cta][href="#download"]').count() == 2
         assert page.locator('a[href*="releases/latest/download"]').count() == 0
@@ -92,9 +92,9 @@ def run_e2e(url):
         failed.close()
 
         reduced, page = open_demo(browser, url, viewport={"width": 1440, "height": 1000}, reduced_motion="reduce")
-        set_storage(page, 96)
+        set_storage(page, 81)
         expect(page.locator("[data-state]")).to_have_text("OPTIMIZED", timeout=3_000)
-        assert float(page.locator("#storage").input_value()) == 84
+        assert float(page.locator("#storage").input_value()) == 72
         reduced.close()
 
         mobile, page = open_demo(browser, url, viewport={"width": 390, "height": 844}, device_scale_factor=1)

@@ -25,10 +25,11 @@ public struct StorageSnapshot: Equatable, Sendable {
 }
 
 public enum StoragePolicy {
-    public static let warningThreshold = 0.90
-    public static let cleanupThreshold = 0.95
-    public static let warningResetThreshold = 0.88
-    public static let cleanupCooldown: TimeInterval = 6 * 60 * 60
+    public static let warningThreshold = 0.75
+    public static let cleanupThreshold = 0.78
+    public static let hardLimit = 0.80
+    public static let warningResetThreshold = 0.73
+    public static let cleanupCooldown: TimeInterval = 15 * 60
 
     public static func level(for usedFraction: Double) -> StorageLevel {
         if usedFraction >= cleanupThreshold { return .critical }
