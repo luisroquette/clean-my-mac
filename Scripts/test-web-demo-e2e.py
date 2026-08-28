@@ -16,9 +16,12 @@ def free_port():
         return listener.getsockname()[1]
 
 
-def wait_for_server(port):
+def wait_for_server(port, server):
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
+        if server.poll() is not None:
+            error = server.stderr.read().decode().strip()
+            raise RuntimeError(f"Demo server exited before startup: {error}")
         try:
             with socket.create_connection(("127.0.0.1", port), timeout=0.2):
                 return
@@ -97,12 +100,12 @@ def run_e2e(url):
 def main():
     port = free_port()
     server = subprocess.Popen(
-        [sys.executable, "-m", "http.server", str(port), "-d", str(ROOT / "docs")],
+        [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "-d", str(ROOT / "docs")],
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
     )
     try:
-        wait_for_server(port)
+        wait_for_server(port, server)
         run_e2e(f"http://127.0.0.1:{port}/#proof")
     finally:
         server.terminate()
