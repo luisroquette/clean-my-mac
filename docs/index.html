@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#171411">
   <meta name="color-scheme" content="dark">
-  <meta name="description" content="Clean My Mac warns at 75% and safely cleans regenerable developer data at 78% to protect an 80% SSD ceiling. Free, native and local-first.">
+  <meta name="description" content="Proteção autônoma de SSD para quem usa Codex, Claude Code e agentes de programação. Limpa com segurança worktrees, builds e caches regeneráveis.">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Clean My Mac — Stop disk-full emergencies before they start">
-  <meta property="og:description" content="A free native menu-bar guard for Mac storage. Alert at 75%. Safe cleanup at 78%. 80% ceiling. Zero telemetry.">
+  <meta property="og:title" content="Clean My Mac — Proteção de SSD para quem cria com IA">
+  <meta property="og:description" content="Codex e Claude Code produzem código — e muitos GB de builds, worktrees e caches. O Clean My Mac recupera esse espaço sozinho.">
   <meta property="og:image" content="https://luisroquette.github.io/clean-my-mac/img/og-card.png">
   <meta property="og:url" content="https://luisroquette.github.io/clean-my-mac/">
   <meta name="twitter:card" content="summary_large_image">
@@ -17,156 +17,170 @@
   <link rel="preload" href="img/storage-hero.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="polish.css">
-  <title>Clean My Mac — Automatic storage protection</title>
+  <title>Clean My Mac — Proteção de SSD para quem cria com IA</title>
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Clean My Mac","operatingSystem":"macOS 14 or later on Apple silicon","applicationCategory":"UtilitiesApplication","softwareVersion":"1.1.0","description":"A native menu-bar guard that warns at 75% and safely cleans regenerable developer data at 78% to protect an 80% SSD ceiling.","downloadUrl":"https://luisroquette.github.io/clean-my-mac/#download","license":"https://opensource.org/license/mit","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Luis Roquette","url":"https://github.com/luisroquette"}}
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Clean My Mac","operatingSystem":"macOS 14 ou posterior em Apple silicon","applicationCategory":"UtilitiesApplication","softwareVersion":"1.1.0","description":"Proteção autônoma de SSD para utilizadores de Codex, Claude Code e agentes de programação. Limpa artefatos regeneráveis com segurança.","downloadUrl":"https://luisroquette.github.io/clean-my-mac/#download","license":"https://opensource.org/license/mit","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Luis Roquette","url":"https://github.com/luisroquette"}}
   </script>
 </head>
 <body>
   <div class="page-progress" aria-hidden="true"><i data-page-progress></i></div>
-  <a class="skip-link" href="#main">Skip to content</a>
+  <a class="skip-link" href="#main">Pular para o conteúdo</a>
   <header class="nav" data-nav>
     <a class="brand" href="#top"><img src="img/app-icon.svg" alt="" width="36" height="36"><span>Clean My Mac</span></a>
-    <nav aria-label="Primary navigation"><a href="#proof">How it works</a><a href="#safety">Safety</a><a href="https://github.com/luisroquette/clean-my-mac">Source</a><a class="nav-cta" href="#download" data-download-cta>Download free</a></nav>
+    <nav aria-label="Navegação principal"><a href="#ai-workflow">O problema da IA</a><a href="#proof">Como funciona</a><a href="#safety">Segurança</a><a href="https://github.com/luisroquette/clean-my-mac">Código</a><a class="nav-cta" href="#download" data-download-cta>Baixar grátis</a></nav>
   </header>
 
   <main id="main">
     <section class="hero" id="top">
       <img class="hero-art" src="img/storage-hero.webp" alt="" width="1672" height="941" fetchpriority="high" decoding="async">
-      <span class="hero-coordinate coordinate-top" aria-hidden="true">VOLUME / DATA</span>
-      <span class="hero-coordinate coordinate-side" aria-hidden="true">LOCAL MONITOR · 1 MIN SAMPLE</span>
+      <span class="hero-coordinate coordinate-top" aria-hidden="true">SSD / DADOS</span>
+      <span class="hero-coordinate coordinate-side" aria-hidden="true">MONITOR LOCAL · AMOSTRA DE 1 MIN</span>
       <div class="hero-copy reveal">
-        <p class="eyebrow"><i></i> Native Swift · Local-first · Free</p>
-        <h1>Your disk fills quietly.<br><em>This notices first.</em></h1>
-        <p class="lede">A tiny menu-bar guard warns you at 75%, cleans safe regenerable developer data at 78%, and protects an 80% SSD ceiling.</p>
+        <p class="eyebrow"><i></i> Feito para Codex, Claude Code e agentes de programação</p>
+        <h1>Sua IA escreve código.<br><em>E lota o SSD junto.</em></h1>
+        <p class="lede">Worktrees, builds, <code>node_modules</code> e caches crescem a cada tarefa. O Clean My Mac vigia o disco e recupera esse espaço sozinho — ou com um clique.</p>
         <div class="actions">
-          <a class="button primary" href="#download" data-download-cta><span>Download for macOS</span><small>v1.1.0 · Apple silicon</small></a>
-          <a class="button secondary" href="#demo">See the real app ↓</a>
+          <a class="button primary" href="#download" data-download-cta><span>Proteger meu SSD</span><small>grátis · v1.1.0 · Apple silicon</small></a>
+          <a class="button secondary" href="#demo">Ver a limpeza em ação ↓</a>
         </div>
-        <p class="micro">macOS 14+ · No account · No telemetry · MIT licensed</p>
+        <p class="micro">Instale uma vez · monitora a cada minuto · sem conta · sem telemetria</p>
       </div>
       <figure class="app-shot reveal">
-        <div class="menu-chip" aria-hidden="true"><img src="img/app-icon.svg" alt="" width="24" height="24"><strong>91%</strong><span>STORAGE</span><i></i></div>
-        <span class="shot-label">LIVE AT 91%</span>
+        <div class="menu-chip" aria-hidden="true"><img src="img/app-icon.svg" alt="" width="24" height="24"><strong>91%</strong><span>SSD</span><i></i></div>
+        <span class="shot-label">SSD SOB PRESSÃO · 91%</span>
         <div class="app-visual">
-          <img src="img/app-popover.webp" alt="Clean My Mac showing 91% storage used, 44.73 GB free, and enabled automatic cleanup" width="762" height="758" fetchpriority="high" decoding="async">
+          <img src="img/app-popover.webp" alt="Clean My Mac mostrando 91% do armazenamento usado e a limpeza automática ativada" width="762" height="758" fetchpriority="high" decoding="async">
           <div class="cleaning-animation" aria-hidden="true">
             <span class="cleaning-beam"></span>
             <div class="storage-relief">
               <div class="relief-head">
                 <strong class="relief-percent"><span>91%</span><span>72%</span></strong>
-                <small>used</small>
-                <span class="relief-free"><span>44.73 GB free</span><span>79.52 GB free</span></span>
+                <small>usado</small>
+                <span class="relief-free"><span>44,73 GB livres</span><span>79,52 GB livres</span></span>
               </div>
               <div class="relief-track"><i></i></div>
-              <div class="relief-signals"><span>△ Alert at 75%</span><span>✦ Pressure relieved</span></div>
+              <div class="relief-signals"><span>△ Alerta aos 75%</span><span>✦ Pressão aliviada</span></div>
             </div>
             <span class="cleaning-target target-cache"></span>
             <span class="cleaning-target target-build"></span>
             <div class="cleaning-debris"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-            <div class="cleaning-complete">✓ <span>SAFE CLEAN COMPLETE</span></div>
+            <div class="cleaning-complete">✓ <span>LIMPEZA SEGURA CONCLUÍDA</span></div>
             <div class="cleaning-status">
               <i></i>
-              <span class="cleaning-copy"><b>SAFE CLEAN DEMO</b><small>Generated files only</small></span>
-              <strong class="cleaning-phase"><span>INDEX</span><span>CLEAN</span><span>DONE</span></strong>
+              <span class="cleaning-copy"><b>LIMPEZA DE ARTEFATOS IA</b><small>Apenas arquivos regeneráveis</small></span>
+              <strong class="cleaning-phase"><span>MAPEAR</span><span>LIMPAR</span><span>PRONTO</span></strong>
             </div>
           </div>
         </div>
-        <figcaption>Actual application interface · no staged dashboard</figcaption>
+        <figcaption>Interface real do aplicativo · limpeza autônoma local</figcaption>
       </figure>
     </section>
 
-    <section class="metrics" aria-label="Product thresholds">
-      <div data-code="01 / ALERT"><strong>75%</strong><span>one clear warning</span></div>
-      <div data-code="02 / CLEAN"><strong>78%</strong><span>preventive cleanup</span></div>
-      <div data-code="03 / CEILING"><strong>80%</strong><span>hard-limit alert</span></div>
-      <div data-code="04 / PRIVACY"><strong>0</strong><span>telemetry events</span></div>
+    <section class="metrics" aria-label="Limites do produto">
+      <div data-code="01 / ALERTA"><strong>75%</strong><span>aviso antes da crise</span></div>
+      <div data-code="02 / AUTÔNOMO"><strong>78%</strong><span>limpeza sem interromper</span></div>
+      <div data-code="03 / LIMITE"><strong>80%</strong><span>proteção do SSD</span></div>
+      <div data-code="04 / PRIVACIDADE"><strong>0</strong><span>dados enviados</span></div>
+    </section>
+
+    <section class="section ai-problem" id="ai-workflow">
+      <div class="section-heading">
+        <p class="eyebrow">O custo invisível do código com IA</p>
+        <h2>Agentes trabalham em paralelo.<br><em>Seu SSD paga a conta.</em></h2>
+        <p>Foi esse problema real que criou o Clean My Mac: Codex e Claude Code aceleram o trabalho, mas cada execução pode deixar worktrees, dependências, builds e caches ocupando dezenas de gigabytes.</p>
+      </div>
+      <div class="agent-ledger" aria-label="Resíduos comuns de agentes de programação">
+        <article><span>01 / AGENTES</span><h3>Mais tarefas, mais cópias</h3><p>Sessões paralelas multiplicam branches, worktrees e ambientes temporários sem avisar quanto espaço consumiram.</p><div class="agent-trace"><b>CODEX</b><b>CLAUDE CODE</b><b>WORKTREES</b></div></article>
+        <article><span>02 / ARTEFATOS</span><h3>O código termina. O peso fica.</h3><p><code>node_modules</code>, <code>.next</code> e caches de npm, uv, Bun, Deno e Homebrew continuam no SSD depois da entrega.</p><div class="agent-trace"><b>NODE_MODULES</b><b>.NEXT</b><b>CACHES</b></div></article>
+        <article><span>03 / CONTEXTO</span><h3>Limpeza que entende projetos</h3><p>O sistema verifica Git, processos ativos e uma lista segura antes de remover somente o que pode ser reconstruído.</p><div class="agent-trace safe"><b>GIT SAFE</b><b>LOCAL</b><b>REGENERÁVEL</b></div></article>
+      </div>
+      <p class="generic-contrast"><strong>Categoria diferente:</strong> CCleaner e utilitários genéricos fazem manutenção ampla. O Clean My Mac foi desenhado para o rastro técnico de agentes de código e protege fontes, projetos ativos e arquivos pessoais.</p>
     </section>
 
     <section class="section pressure" id="proof" data-pressure>
       <div class="section-heading">
-        <p class="eyebrow">Try the decision model</p>
-        <h2>Two thresholds. No guesswork.</h2>
-        <p>Move the storage level. This browser demo mirrors the published policy; it controls nothing on your Mac.</p>
+        <p class="eyebrow">Veja o modo autônomo decidir</p>
+        <h2>O agente trabalha.<br><em>O espaço volta sozinho.</em></h2>
+        <p>Leve a barra até 78% para simular a limpeza. Esta demonstração reproduz a política do aplicativo sem alterar o seu Mac.</p>
       </div>
       <div class="storage-console" data-storage-console>
         <header class="console-bar">
           <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-          <strong><img src="img/app-icon.svg" alt="" width="24" height="24">Clean My Mac <span>— Storage Control</span></strong>
-          <div class="console-status"><span><i></i>Local only</span><button type="button" data-auto-clean aria-pressed="true">Automatic cleaning: <b data-auto-label>On</b></button></div>
+          <strong><img src="img/app-icon.svg" alt="" width="24" height="24">Clean My Mac <span>— Controle para IA</span></strong>
+          <div class="console-status"><span><i></i>100% local</span><button type="button" data-auto-clean aria-pressed="true">Limpeza autônoma: <b data-auto-label>Ativa</b></button></div>
         </header>
         <div class="console-grid">
           <aside class="pressure-readout">
-            <div class="gauge-shell"><span class="gauge-label gauge-label-top">ALERT 75</span><span class="gauge-label gauge-label-bottom">CLEAN 78</span><div class="gauge"><div class="gauge-value"><strong data-percent>72%</strong><span>USED</span></div></div></div>
-            <p data-gauge-status>Storage pressure is normal.</p>
+            <div class="gauge-shell"><span class="gauge-label gauge-label-top">ALERTA 75</span><span class="gauge-label gauge-label-bottom">LIMPAR 78</span><div class="gauge"><div class="gauge-value"><strong data-percent>72%</strong><span>USADO</span></div></div></div>
+            <p data-gauge-status>Pressão do SSD normal.</p>
           </aside>
           <div class="pressure-controls">
-            <label for="storage">Storage pressure thresholds</label>
+            <label for="storage">Uso simulado do SSD</label>
             <div class="threshold-control"><span class="threshold-track" aria-hidden="true"><i></i><i></i><i></i></span><input id="storage" type="range" min="70" max="99" step="0.1" value="72" aria-describedby="decision-copy"></div>
-            <div class="ticks"><span>70%<b>NORMAL</b></span><span>75%<b>ALERT</b></span><span>78%<b>CLEAN</b></span><span>80% LIMIT</span></div>
+            <div class="ticks"><span>70%<b>NORMAL</b></span><span>75%<b>ALERTA</b></span><span>78%<b>LIMPAR</b></span><span>80% LIMITE</span></div>
             <div class="decision-flow">
-              <div class="decision" aria-live="polite"><span data-state>NORMAL</span><h3 data-title>Keep watching.</h3><p id="decision-copy" data-copy>Storage is below the warning threshold. No action is taken.</p></div>
+              <div class="decision" aria-live="polite"><span data-state>NORMAL</span><h3 data-title>Só observando.</h3><p id="decision-copy" data-copy>O SSD está abaixo do limite de alerta. Nenhuma ação é necessária.</p></div>
               <span class="flow-arrow" aria-hidden="true">→</span>
-              <div class="target-state"><span>TARGET STATE</span><strong>72%</strong><small>healthy pressure</small></div>
+              <div class="target-state"><span>ALVO SEGURO</span><strong>72%</strong><small>espaço recuperado</small></div>
             </div>
           </div>
         </div>
-        <ol class="cleanup-timeline" aria-label="Cleanup progress">
-          <li><i>!</i><strong>Detected</strong><span>Threshold reached</span></li>
-          <li><i>⌁</i><strong>Scanning</strong><span>Allow list only</span></li>
-          <li><i>↘</i><strong>Cleaning</strong><span>Generated files</span></li>
-          <li><i>✓</i><strong>Optimized</strong><span>Pressure relieved</span></li>
+        <ol class="cleanup-timeline" aria-label="Progresso da limpeza">
+          <li><i>!</i><strong>Detectado</strong><span>78% alcançado</span></li>
+          <li><i>⌁</i><strong>Mapeando</strong><span>Lista segura</span></li>
+          <li><i>↘</i><strong>Limpando</strong><span>Resíduos de IA</span></li>
+          <li><i>✓</i><strong>Aliviado</strong><span>Pressão reduzida</span></li>
         </ol>
-        <footer class="audit-strip"><strong>Audit scope</strong><span>Homebrew + tool caches</span><span>Ignored <code>node_modules</code></span><span><code>.next</code> build output</span><span>Git-tracked source protected</span></footer>
+        <footer class="audit-strip"><strong>Escopo seguro</strong><span>Caches de ferramentas</span><span><code>node_modules</code> ignorados</span><span>Builds <code>.next</code></span><span>Fontes Git protegidas</span></footer>
       </div>
     </section>
 
     <section class="section safety" id="safety">
-      <div class="section-heading"><p class="eyebrow">The deletion boundary</p><h2>Useful enough to recover space.<br><em>Narrow enough to trust.</em></h2></div>
+      <div class="section-heading"><p class="eyebrow">Entende projetos, não só pastas</p><h2>Autonomia com uma fronteira clara.</h2></div>
       <div class="safety-grid">
-        <article class="may"><span>MAY CLEAN</span><h3>Regenerable data</h3><ul><li>uv, Bun, Deno and Homebrew caches</li><li>Git-ignored <code>node_modules</code> and <code>.next</code> over 100 MB</li><li>Only inactive development projects</li></ul></article>
-        <article class="never"><span>NEVER TOUCHES</span><h3>Your actual work</h3><ul><li>Documents, Desktop, Downloads or media libraries</li><li>Git-tracked source, credentials or external volumes</li><li>Trash contents, Docker data or active projects</li></ul></article>
+        <article class="may"><span>PODE LIMPAR</span><h3>Resíduos regeneráveis</h3><ul><li>Caches de uv, Bun, Deno e Homebrew</li><li><code>node_modules</code> e <code>.next</code> ignorados pelo Git e acima de 100 MB</li><li>Somente projetos de desenvolvimento inativos</li></ul></article>
+        <article class="never"><span>NUNCA TOCA</span><h3>Seu trabalho real</h3><ul><li>Documentos, Mesa, Downloads ou bibliotecas de mídia</li><li>Fontes Git, credenciais ou discos externos</li><li>Lixeira, dados Docker ou projetos ativos</li></ul></article>
       </div>
-      <p class="safety-note">Every cleanup writes a local audit log. Generated artifacts are permanently deleted only after the safety checks pass. <a href="https://github.com/luisroquette/clean-my-mac/blob/main/Sources/CleanMyMac/SafeCleaner.swift">Inspect the exact cleaner →</a></p>
+      <p class="safety-note">Cada limpeza gera um registro local. Artefatos são apagados somente depois das verificações de segurança. <a href="https://github.com/luisroquette/clean-my-mac/blob/main/Sources/CleanMyMac/SafeCleaner.swift">Inspecionar o código exato →</a></p>
     </section>
 
     <section class="section steps">
-      <div class="section-heading"><p class="eyebrow">Set once</p><h2>Storage protection without another dashboard.</h2></div>
-      <div class="step-grid"><article><b>01</b><h3>Open it</h3><p>The disk icon settles into the macOS menu bar and starts at login.</p></article><article><b>02</b><h3>Get warned</h3><p>At 75%, the icon changes and macOS sends one notification.</p></article><article><b>03</b><h3>Recover room</h3><p>At 78%, the cleaner runs its strict allow list and can retry after 15 minutes.</p></article></div>
+      <div class="section-heading"><p class="eyebrow">Instale uma vez</p><h2>Deixe seus agentes criarem.<br><em>O espaço se administra sozinho.</em></h2></div>
+      <div class="step-grid"><article><b>01</b><h3>Ative em um clique</h3><p>O ícone fica na barra do macOS e abre automaticamente com a sessão.</p></article><article><b>02</b><h3>Use sua IA normalmente</h3><p>Codex, Claude Code e seus builds continuam trabalhando enquanto o disco é monitorado.</p></article><article><b>03</b><h3>Recupere espaço</h3><p>Aos 78%, a lista segura entra em ação; se necessário, tenta novamente após 15 minutos.</p></article></div>
     </section>
 
     <section class="section demo" id="demo">
-      <div class="section-heading"><p class="eyebrow">The real app</p><h2>Watch the entire idea in 12 seconds.</h2></div>
-      <video controls playsinline preload="metadata" poster="img/video-poster.webp"><source src="video/clean-my-mac-demo.mp4" type="video/mp4">Your browser does not support embedded video.</video>
+      <div class="section-heading"><p class="eyebrow">Aplicativo real</p><h2>Veja o SSD respirar em 12 segundos.</h2></div>
+      <video controls playsinline preload="metadata" poster="img/app-popover.webp"><source src="video/clean-my-mac-demo.mp4" type="video/mp4">Seu navegador não reproduz este vídeo.</video>
     </section>
 
     <section class="section install" id="download">
-      <div><p class="eyebrow">Free and open source</p><h2>Give your Mac a storage guard.</h2><p>The 80% ceiling is best-effort: if safe data is insufficient, the app alerts instead of deleting personal files. The source and every deletion rule are public.</p><a class="install-help" href="https://github.com/luisroquette/clean-my-mac#install">Installation instructions →</a></div>
+      <div><p class="eyebrow">Grátis e código aberto</p><h2>Pare de interromper sua IA para caçar cache.</h2><p>Um clique ativa a proteção autônoma. O limite de 80% é tratado dentro do que for seguro; se não houver resíduos suficientes, o aplicativo alerta sem apagar arquivos pessoais.</p><a class="install-help" href="https://github.com/luisroquette/clean-my-mac#install">Instruções de instalação →</a></div>
       <div class="download-gate">
         <div data-lead-form-wrap>
-          <span class="gate-code">DOWNLOAD ACCESS / 01</span>
-          <h3>Where should we send product updates?</h3>
-          <p id="lead-privacy">Enter your contact details to unlock the free download. CF Gauss stores them in its commercial pipeline and may contact you about Clean My Mac.</p>
+          <span class="gate-code">ACESSO AO DOWNLOAD / 01</span>
+          <h3>Para onde enviamos as novidades?</h3>
+          <p id="lead-privacy">Preencha os dados para liberar o download gratuito. A CF Gauss registra o contato no pipeline comercial e poderá falar com você sobre o Clean My Mac.</p>
           <form data-lead-form aria-describedby="lead-privacy">
-            <label>Name<input name="name" autocomplete="name" minlength="2" maxlength="80" required></label>
+            <label>Nome<input name="name" autocomplete="name" minlength="2" maxlength="80" required></label>
             <label>WhatsApp<input name="whatsapp" type="tel" inputmode="tel" autocomplete="tel" minlength="10" maxlength="20" placeholder="(11) 99999-9999" required></label>
-            <label>Email<input name="email" type="email" autocomplete="email" maxlength="120" placeholder="you@example.com" required></label>
+            <label>E-mail<input name="email" type="email" autocomplete="email" maxlength="120" placeholder="voce@exemplo.com" required></label>
             <label class="lead-honeypot" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
-            <button class="button primary" type="submit"><span>Unlock free download</span><small>v1.1.0 · Apple silicon</small></button>
+            <button class="button primary" type="submit"><span>Liberar download grátis</span><small>v1.1.0 · Apple silicon</small></button>
             <p class="form-status" data-form-status role="status" aria-live="polite"></p>
           </form>
         </div>
         <div class="download-ready" data-download-ready hidden tabindex="-1">
-          <span class="gate-code">ACCESS GRANTED / 02</span>
-          <h3>Your download is ready.</h3>
-          <p>Your contact was registered. The file is a ZIP containing the macOS app.</p>
-          <a class="button primary" data-download-link href="#"><span>Download Clean My Mac</span><small>Free · v1.1.0</small></a>
+          <span class="gate-code">ACESSO LIBERADO / 02</span>
+          <h3>Seu download está pronto.</h3>
+          <p>Seu contato foi registrado. O arquivo ZIP contém o aplicativo para macOS.</p>
+          <a class="button primary" data-download-link href="#"><span>Baixar Clean My Mac</span><small>Grátis · v1.1.0</small></a>
         </div>
       </div>
     </section>
   </main>
 
-  <footer><div><img src="img/app-icon.svg" alt="" width="32" height="32"><strong>Clean My Mac</strong></div><p>Independent open-source software by <a href="https://github.com/luisroquette">Luis Roquette</a>. Not affiliated with or endorsed by MacPaw.</p></footer>
+  <footer><div><img src="img/app-icon.svg" alt="" width="32" height="32"><strong>Clean My Mac</strong></div><p>Proteção de SSD feita para quem constrói com IA. Software independente e aberto por <a href="https://github.com/luisroquette">Luis Roquette</a>, sem afiliação ou endosso da MacPaw.</p></footer>
   <script type="module" src="script.js"></script>
 </body>
 </html>

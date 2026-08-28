@@ -32,6 +32,7 @@ def open_demo(browser, url, **context_options):
 
 def run_e2e(url):
     with sync_playwright() as playwright:
+        print("E2E: desktop", flush=True)
         browser = playwright.chromium.launch(channel="chrome", headless=True)
         context, page = open_demo(browser, url, viewport={"width": 1440, "height": 1000})
         console_errors = []
@@ -40,12 +41,18 @@ def run_e2e(url):
         page.on("pageerror", lambda error: page_errors.append(str(error)))
 
         assert page.locator("[data-storage-console]").is_visible()
+        page_text = page.locator("body").inner_text()
+        assert "Codex" in page_text
+        assert "Claude Code" in page_text
+        assert "CCleaner" in page_text
+        assert "agentes de programação" in page_text.lower()
+        assert "um clique" in page_text.lower()
         assert page.locator("[data-percent]").inner_text() == "72%"
         assert page.locator("[data-state]").inner_text() == "NORMAL"
         set_storage(page, 74.9)
         assert page.locator("[data-state]").inner_text() == "NORMAL"
         set_storage(page, 75)
-        assert page.locator("[data-state]").inner_text() == "75% ALERT"
+        assert page.locator("[data-state]").inner_text() == "ALERTA 75%"
 
         auto_clean = page.locator("[data-auto-clean]")
         auto_clean.focus()
@@ -54,10 +61,10 @@ def run_e2e(url):
         set_storage(page, 81)
         page.wait_for_timeout(1200)
         assert float(page.locator("#storage").input_value()) == 81
-        assert page.locator("[data-state]").inner_text() == "78% CLEANUP"
+        assert page.locator("[data-state]").inner_text() == "LIMPEZA 78%"
 
         page.keyboard.press("Enter")
-        expect(page.locator("[data-state]")).to_have_text("OPTIMIZED", timeout=10_000)
+        expect(page.locator("[data-state]")).to_have_text("ALIVIADO", timeout=10_000)
         assert float(page.locator("#storage").input_value()) == 72
         assert page.locator(".cleanup-timeline li.is-done").count() == 4
         assert page.locator('[data-download-cta][href="#download"]').count() == 2
@@ -78,6 +85,7 @@ def run_e2e(url):
         assert not page_errors, page_errors
         context.close()
 
+        print("E2E: lead failure", flush=True)
         failed, page = open_demo(browser, url, viewport={"width": 1440, "height": 1000})
         page.route(
             "https://cfgauss.com.br/api/lead/clean-my-mac",
@@ -91,12 +99,14 @@ def run_e2e(url):
         expect(page.locator("[data-download-ready]")).to_be_hidden()
         failed.close()
 
+        print("E2E: reduced motion", flush=True)
         reduced, page = open_demo(browser, url, viewport={"width": 1440, "height": 1000}, reduced_motion="reduce")
         set_storage(page, 81)
-        expect(page.locator("[data-state]")).to_have_text("OPTIMIZED", timeout=3_000)
+        expect(page.locator("[data-state]")).to_have_text("ALIVIADO", timeout=3_000)
         assert float(page.locator("#storage").input_value()) == 72
         reduced.close()
 
+        print("E2E: mobile", flush=True)
         mobile, page = open_demo(browser, url, viewport={"width": 390, "height": 844}, device_scale_factor=1)
         dimensions = page.evaluate("({ client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth })")
         assert dimensions["scroll"] == dimensions["client"], dimensions

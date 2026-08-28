@@ -20,11 +20,11 @@ if (section) {
   const timeline = [...section.querySelectorAll('.cleanup-timeline li')];
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const states = {
-    normal: ['NORMAL', 'Keep watching.', 'Storage is below the warning threshold. No action is taken.', 'Storage pressure is normal.'],
-    warning: ['75% ALERT', 'Pressure is rising.', 'The menu-bar icon changes and macOS sends one notification.', 'Storage pressure needs attention.'],
-    critical: ['78% CLEANUP', 'Pressure critical.', 'Automatic safe cleanup will begin using the strict allow list.', 'Cleanup threshold reached.'],
-    cleaning: ['SAFE CLEANUP', 'Pressure is falling.', 'Only allow-listed caches and generated build files are being removed.', 'Safe cleanup is running.'],
-    optimized: ['OPTIMIZED', 'Pressure relieved.', 'The browser simulation reached the healthy target without touching personal files.', 'Storage pressure is healthy.']
+    normal: ['NORMAL', 'Só observando.', 'O SSD está abaixo do limite de alerta. Nenhuma ação é necessária.', 'Pressão do SSD normal.'],
+    warning: ['ALERTA 75%', 'A pressão está subindo.', 'O ícone muda e o macOS envia uma única notificação.', 'O SSD precisa de atenção.'],
+    critical: ['LIMPEZA 78%', 'Hora de recuperar espaço.', 'A limpeza autônoma usará apenas a lista segura de resíduos de desenvolvimento.', 'Limite de limpeza alcançado.'],
+    cleaning: ['LIMPEZA IA', 'A pressão está caindo.', 'Caches e builds regeneráveis estão sendo removidos sem tocar no seu código.', 'Limpeza segura em andamento.'],
+    optimized: ['ALIVIADO', 'Espaço recuperado.', 'A simulação voltou ao alvo saudável sem tocar em arquivos pessoais.', 'Pressão do SSD normalizada.']
   };
   let cleanupTimer;
   let cleanupFrame;
@@ -105,7 +105,7 @@ if (section) {
   autoClean.addEventListener('click', () => {
     const enabled = autoClean.getAttribute('aria-pressed') !== 'true';
     autoClean.setAttribute('aria-pressed', String(enabled));
-    autoClean.querySelector('[data-auto-label]').textContent = enabled ? 'On' : 'Off';
+    autoClean.querySelector('[data-auto-label]').textContent = enabled ? 'Ativa' : 'Inativa';
     if (enabled) scheduleCleanup();
     else stopCleanup();
   });
@@ -137,7 +137,7 @@ if (typeof window !== 'undefined') {
       event.preventDefault();
       if (!leadForm.reportValidity() || submit.disabled) return;
       submit.disabled = true;
-      status.textContent = 'Registering your download…';
+      status.textContent = 'Registrando seu download…';
       status.dataset.kind = 'pending';
 
       try {
@@ -148,13 +148,13 @@ if (typeof window !== 'undefined') {
           body: JSON.stringify(Object.fromEntries(fields))
         });
         const result = await response.json();
-        if (!response.ok || !result.success || !result.downloadUrl) throw new Error(result.error || 'Download could not be unlocked.');
+        if (!response.ok || !result.success || !result.downloadUrl) throw new Error(result.error || 'Não foi possível liberar o download.');
         downloadLink.href = result.downloadUrl;
         formWrap.hidden = true;
         ready.hidden = false;
         ready.focus();
       } catch (error) {
-        status.textContent = error.message || 'Download could not be unlocked. Try again.';
+        status.textContent = error.message || 'Não foi possível liberar o download. Tente novamente.';
         status.dataset.kind = 'error';
         submit.disabled = false;
       }

@@ -810,6 +810,28 @@ body::before {
   transition: transform 320ms ease, border-color 320ms ease;
 }
 
+.ai-problem { padding-top: clamp(100px, 12vw, 180px); }
+
+.agent-ledger {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: clamp(42px, 6vw, 76px);
+  border: 1px solid rgba(242, 140, 56, 0.24);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.agent-ledger article { min-height: 330px; padding: clamp(26px, 4vw, 48px); border-right: 1px solid var(--line); }
+.agent-ledger article:last-child { border-right: 0; }
+.agent-ledger article > span, .agent-trace b { font-family: "SFMono-Regular", Consolas, monospace; font-size: 9px; letter-spacing: 0.14em; }
+.agent-ledger article > span { color: var(--orange); }
+.agent-ledger h3 { max-width: 12ch; margin: 48px 0 14px; font-family: var(--serif); font-size: clamp(29px, 3vw, 43px); font-weight: 500; line-height: 0.98; letter-spacing: -0.035em; }
+.agent-ledger p { color: var(--muted); line-height: 1.65; }
+.agent-trace { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 28px; }
+.agent-trace b { padding: 7px 9px; border: 1px solid rgba(242, 140, 56, 0.25); color: var(--orange-soft); background: rgba(242, 140, 56, 0.06); }
+.agent-trace.safe b { border-color: rgba(111, 154, 118, 0.3); color: #91bc98; background: rgba(111, 154, 118, 0.07); }
+.generic-contrast { margin: 0; padding: clamp(24px, 4vw, 42px); border: 1px solid rgba(242, 140, 56, 0.24); border-top: 0; color: var(--muted); font-size: clamp(16px, 1.5vw, 20px); line-height: 1.6; }
+.generic-contrast strong { color: var(--ink); }
+
 .safety-grid article:hover {
   border-color: rgba(242, 140, 56, 0.34);
   transform: translateY(-5px);
@@ -910,6 +932,10 @@ body::before {
   .console-grid { grid-template-columns: 1fr; }
   .pressure-readout { max-width: 320px; margin: auto; }
   .step-grid article { min-height: 0; }
+  .agent-ledger { grid-template-columns: 1fr; }
+  .agent-ledger article { min-height: 0; border-right: 0; border-bottom: 1px solid var(--line); }
+  .agent-ledger article:last-child { border-bottom: 0; }
+  .agent-ledger h3 { margin-top: 28px; }
 }
 
 @media (max-width: 560px) {
