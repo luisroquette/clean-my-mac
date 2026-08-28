@@ -195,9 +195,21 @@ body::before {
   pointer-events: none;
 }
 
+.cleaning-animation::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  content: "";
+  background: rgba(242, 140, 56, 0.12);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  animation: relief-climate 9s ease 1.1s infinite;
+}
+
 .cleaning-animation::after {
   position: absolute;
   inset: 0;
+  z-index: 3;
   content: "";
   background: radial-gradient(circle at 50% 52%, rgba(143, 201, 154, 0.22), transparent 58%);
   opacity: 0;
@@ -206,6 +218,7 @@ body::before {
 
 .cleaning-beam {
   position: absolute;
+  z-index: 2;
   top: -20%;
   right: -10%;
   left: -10%;
@@ -216,9 +229,102 @@ body::before {
   animation: cleaning-scan 9s cubic-bezier(0.4, 0, 0.2, 1) 1.1s infinite;
 }
 
+.storage-relief {
+  position: absolute;
+  top: 20.2%;
+  right: 4.1%;
+  left: 4.2%;
+  z-index: 1;
+  height: 30.4%;
+  padding: clamp(12px, 2.3vw, 22px) clamp(14px, 2.6vw, 26px);
+  border-radius: clamp(16px, 3vw, 28px);
+  color: #5e5b58;
+  background: rgba(237, 232, 227, 0.97);
+  box-shadow: 0 0 34px rgba(242, 140, 56, 0.2);
+  font-family: var(--sans);
+  opacity: 0;
+  animation: relief-panel 9s ease 1.1s infinite;
+}
+
+.relief-head {
+  display: grid;
+  grid-template-columns: clamp(62px, 7.2vw, 88px) auto 1fr;
+  align-items: baseline;
+}
+
+.relief-percent {
+  position: relative;
+  height: clamp(34px, 4vw, 46px);
+  color: #494643;
+  font-size: clamp(25px, 3.2vw, 36px);
+  font-weight: 500;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+.relief-percent span,
+.relief-free span {
+  position: absolute;
+  inset: 0 auto auto 0;
+  white-space: nowrap;
+}
+
+.relief-percent span:first-child,
+.relief-free span:first-child { animation: relief-tense-copy 9s ease 1.1s infinite; }
+.relief-percent span:last-child,
+.relief-free span:last-child { color: #4f7758; opacity: 0; animation: relief-calm-copy 9s ease 1.1s infinite; }
+
+.relief-head small {
+  color: #77736e;
+  font-size: clamp(8px, 1vw, 11px);
+  font-weight: 600;
+}
+
+.relief-free {
+  position: relative;
+  justify-self: end;
+  width: clamp(80px, 11vw, 120px);
+  color: #6d6965;
+  font-size: clamp(8px, 1.15vw, 12px);
+  text-align: right;
+}
+
+.relief-free span { right: 0; left: auto; }
+
+.relief-track {
+  position: relative;
+  height: clamp(7px, 1vw, 10px);
+  margin-top: clamp(10px, 1.6vw, 17px);
+  overflow: hidden;
+  border: 1px solid rgba(73, 70, 67, 0.1);
+  border-radius: 999px;
+  background: rgba(88, 84, 80, 0.09);
+}
+
+.relief-track i {
+  display: block;
+  width: 91%;
+  height: 100%;
+  border-radius: inherit;
+  background: #ed8d38;
+  box-shadow: 0 0 16px rgba(237, 141, 56, 0.38);
+  animation: relief-bar 9s cubic-bezier(0.35, 0, 0.15, 1) 1.1s infinite;
+}
+
+.relief-signals {
+  display: flex;
+  justify-content: space-between;
+  margin-top: clamp(10px, 1.7vw, 18px);
+  color: #77736e;
+  font-size: clamp(7px, 0.9vw, 10px);
+  font-weight: 600;
+}
+
+.relief-signals span:last-child { animation: relief-signal 9s ease 1.1s infinite; }
+
 .cleaning-target {
   position: absolute;
-  z-index: 1;
+  z-index: 3;
   width: 46px;
   height: 46px;
   border: 1px solid rgba(255, 171, 98, 0.86);
@@ -241,7 +347,7 @@ body::before {
 
 .cleaning-debris i {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   width: 7px;
   height: 7px;
   border: 1px solid rgba(255, 185, 111, 0.86);
@@ -261,7 +367,7 @@ body::before {
   position: absolute;
   bottom: 20px;
   left: 50%;
-  z-index: 4;
+  z-index: 5;
   display: flex;
   gap: 8px;
   align-items: center;
@@ -284,6 +390,7 @@ body::before {
   position: absolute;
   top: 20px;
   right: 18px;
+  z-index: 4;
   display: grid;
   grid-template-columns: 8px 1fr auto;
   gap: 0 9px;
@@ -320,7 +427,7 @@ body::before {
   border-radius: 50%;
   background: var(--orange);
   box-shadow: 0 0 12px var(--orange);
-  animation: cleaning-pulse 900ms ease-in-out infinite alternate;
+  animation: status-relief-dot 9s ease 1.1s infinite;
 }
 
 .cleaning-copy { display: grid; }
@@ -349,8 +456,9 @@ body::before {
   68%, 100% { transform: scaleX(1); }
 }
 
-@keyframes cleaning-pulse {
-  to { background: #8fc99a; box-shadow: 0 0 14px #8fc99a; }
+@keyframes status-relief-dot {
+  0%, 48%, 100% { background: var(--orange); box-shadow: 0 0 12px var(--orange); }
+  63%, 82% { background: #8fc99a; box-shadow: 0 0 14px #8fc99a; }
 }
 
 @keyframes cleaning-target {
@@ -373,6 +481,39 @@ body::before {
 @keyframes cleaning-flash {
   0%, 61%, 76%, 100% { opacity: 0; }
   66% { opacity: 1; }
+}
+
+@keyframes relief-climate {
+  0%, 8%, 88%, 100% { background: rgba(242, 140, 56, 0.12); opacity: 0; }
+  14%, 35% { background: rgba(242, 140, 56, 0.16); opacity: 1; }
+  68%, 80% { background: rgba(111, 170, 125, 0.16); opacity: 1; }
+}
+
+@keyframes relief-panel {
+  0%, 9%, 86%, 100% { background: rgba(237, 232, 227, 0.97); box-shadow: 0 0 34px rgba(242, 140, 56, 0.2); opacity: 0; }
+  13%, 34% { background: rgba(241, 231, 221, 0.98); box-shadow: 0 0 38px rgba(242, 140, 56, 0.3); opacity: 1; }
+  68%, 80% { background: rgba(226, 237, 228, 0.98); box-shadow: 0 0 38px rgba(111, 170, 125, 0.28); opacity: 1; }
+}
+
+@keyframes relief-bar {
+  0%, 28% { width: 91%; background: #ed8d38; box-shadow: 0 0 16px rgba(237, 141, 56, 0.38); }
+  66%, 82% { width: 84%; background: #6faa7d; box-shadow: 0 0 16px rgba(111, 170, 125, 0.3); }
+  100% { width: 84%; background: #6faa7d; }
+}
+
+@keyframes relief-tense-copy {
+  0%, 48% { opacity: 1; transform: translateY(0); }
+  57%, 100% { opacity: 0; transform: translateY(-5px); }
+}
+
+@keyframes relief-calm-copy {
+  0%, 50% { opacity: 0; transform: translateY(5px); }
+  59%, 100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes relief-signal {
+  0%, 48% { color: #c17431; }
+  65%, 100% { color: #4f7758; }
 }
 
 @keyframes cleaning-phase-index {
@@ -433,7 +574,7 @@ body::before {
 .menu-chip img { grid-row: 1 / 3; border-radius: 6px; }
 .menu-chip strong { font-size: 14px; line-height: 1; }
 .menu-chip span { color: var(--muted); font-size: 7px; letter-spacing: 0.16em; }
-.menu-chip i { position: absolute; right: 9px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 10px var(--orange); }
+.menu-chip i { position: absolute; right: 9px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 10px var(--orange); animation: status-relief-dot 9s ease 1.1s infinite; }
 
 .metrics div {
   position: relative;
