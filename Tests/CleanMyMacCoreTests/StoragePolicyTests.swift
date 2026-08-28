@@ -11,6 +11,8 @@ import Testing
     #expect(StoragePolicy.hardLimit == 0.80)
     #expect(StoragePolicy.emergencyThreshold == 0.95)
     #expect(StoragePolicy.shouldResetWarning(for: 0.72))
+    #expect(StoragePolicy.isAtOrAboveHardLimit(0.796))
+    #expect(!StoragePolicy.isAtOrAboveHardLimit(0.794))
 
     let now = Date(timeIntervalSince1970: 100_000)
     #expect(StoragePolicy.shouldRunAutomaticCleanup(
@@ -31,7 +33,7 @@ import Testing
         usedFraction: 0.79,
         enabled: true,
         isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-901),
+        lastCleanupAt: now.addingTimeInterval(-301),
         now: now
     ))
     #expect(!StoragePolicy.shouldRunAutomaticCleanup(
@@ -42,17 +44,17 @@ import Testing
         now: now
     ))
     #expect(!StoragePolicy.shouldRunAutomaticCleanup(
-        usedFraction: 0.94,
+        usedFraction: 0.80,
         enabled: true,
         isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-121),
+        lastCleanupAt: now.addingTimeInterval(-59),
         now: now
     ))
     #expect(StoragePolicy.shouldRunAutomaticCleanup(
-        usedFraction: 0.945,
+        usedFraction: 0.80,
         enabled: true,
         isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-121),
+        lastCleanupAt: now.addingTimeInterval(-60),
         now: now
     ))
     #expect(!StoragePolicy.shouldRunAutomaticCleanup(
@@ -94,9 +96,15 @@ import Testing
         isSymbolicLink: true,
         minimumKiB: 102_400
     ))
+    #expect(CleanupPolicy.shouldExcludeDirectory(named: ".claude"))
+    #expect(CleanupPolicy.shouldExcludeDirectory(named: "claude-501"))
+    #expect(!CleanupPolicy.shouldExcludeDirectory(named: "cfgauss-claude-site"))
 }
 
 @Test func cleanupPolicyKeepsArtifactsInsideTheirGitRoot() {
+    let roots = CleanupPolicy.artifactScanRoots(homePath: "/Users/example")
+    #expect(roots.contains("/Users/example/Projects"))
+    #expect(roots.contains("/private/tmp"))
     #expect(CleanupPolicy.pathsOverlap("/Users/example/Projects/app/node_modules", "/Users/example/Projects/app"))
     #expect(!CleanupPolicy.pathsOverlap("/Users/example/Other/node_modules", "/Users/example/Projects/app"))
     #expect(CleanupPolicy.isProtected(
