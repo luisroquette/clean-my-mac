@@ -52,7 +52,15 @@
           <img src="img/app-popover.webp" alt="Clean My Mac showing 91% storage used, 44.73 GB free, and enabled automatic cleanup" width="762" height="758" fetchpriority="high" decoding="async">
           <div class="cleaning-animation" aria-hidden="true">
             <span class="cleaning-beam"></span>
-            <div class="cleaning-status"><i></i><span><b>SAFE CLEAN DEMO</b><small>Generated files only</small></span><strong>SCANNING</strong></div>
+            <span class="cleaning-target target-cache"></span>
+            <span class="cleaning-target target-build"></span>
+            <div class="cleaning-debris"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="cleaning-complete">✓ <span>SAFE CLEAN COMPLETE</span></div>
+            <div class="cleaning-status">
+              <i></i>
+              <span class="cleaning-copy"><b>SAFE CLEAN DEMO</b><small>Generated files only</small></span>
+              <strong class="cleaning-phase"><span>INDEX</span><span>CLEAN</span><span>DONE</span></strong>
+            </div>
           </div>
         </div>
         <figcaption>Actual application interface · no staged dashboard</figcaption>
