@@ -11,6 +11,30 @@ public enum BackupVerificationError: Error {
 }
 
 public enum BackupVerifier {
+    public static func copyVerifiedAndStageRemoval(
+        source: URL,
+        backup: URL,
+        removalStaging: URL
+    ) throws {
+        let fileManager = FileManager.default
+        do {
+            try fileManager.createDirectory(
+                at: backup.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try fileManager.copyItem(at: source, to: backup)
+            try verifyCopy(source: source, destination: backup)
+            try fileManager.createDirectory(
+                at: removalStaging.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try fileManager.moveItem(at: source, to: removalStaging)
+        } catch {
+            try? fileManager.removeItem(at: backup)
+            throw error
+        }
+    }
+
     public static func verifyCopy(source: URL, destination: URL) throws {
         let sourceEntries = try entries(in: source)
         let destinationEntries = try entries(in: destination)

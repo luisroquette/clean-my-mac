@@ -19,7 +19,7 @@ public enum CleanupPolicy {
     }
 
     public static func isProtected(_ path: String, protectedPaths: [String]) -> Bool {
-        protectedPaths.contains { pathsOverlap(path, $0) }
+        isInsideWarningDefault(path) || protectedPaths.contains { pathsOverlap(path, $0) }
     }
 
     public static func isEligibleArtifact(
@@ -48,5 +48,12 @@ public enum CleanupPolicy {
     private static func normalized(_ path: String) -> String {
         path.precomposedStringWithCanonicalMapping
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+    }
+
+    private static func isInsideWarningDefault(_ path: String) -> Bool {
+        let components = normalized(path).split(separator: "/")
+        return components.indices.dropLast().contains {
+            components[$0] == "Warning" && components[components.index(after: $0)] == "Default"
+        }
     }
 }

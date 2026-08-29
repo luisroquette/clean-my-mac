@@ -79,6 +79,14 @@ import Testing
     let protected = ["/Users/example/Arquivos Públicos"]
     let decomposed = "/Users/example/Arquivos Públicos/Mac/Warning/Default"
     #expect(CleanupPolicy.isProtected(decomposed, protectedPaths: protected))
+    #expect(CleanupPolicy.isProtected(
+        "/Users/example/Projects/client/Warning/Default/node_modules",
+        protectedPaths: []
+    ))
+    #expect(!CleanupPolicy.isProtected(
+        "/Users/example/Projects/client/Warning/Preview/node_modules",
+        protectedPaths: []
+    ))
     #expect(CleanupPolicy.pathsOverlap("/project", "/project/worktree"))
     #expect(CleanupPolicy.isEligibleArtifact(
         name: "node_modules",
@@ -151,4 +159,27 @@ import Testing
     #expect(throws: BackupVerificationError.self) {
         try BackupVerifier.verifyCopy(source: source, destination: destination)
     }
+}
+
+@Test func verifiedBackupStagesOriginalBeforeDeletion() throws {
+    let fileManager = FileManager.default
+    let root = fileManager.temporaryDirectory.appending(path: UUID().uuidString)
+    let source = root.appending(path: "source")
+    let backup = root.appending(path: "external/backup")
+    let removalStaging = root.appending(path: "trash/source")
+    defer { try? fileManager.removeItem(at: root) }
+
+    try fileManager.createDirectory(at: source, withIntermediateDirectories: true)
+    try Data("backup seguro".utf8).write(to: source.appending(path: "artifact.txt"))
+
+    try BackupVerifier.copyVerifiedAndStageRemoval(
+        source: source,
+        backup: backup,
+        removalStaging: removalStaging
+    )
+
+    #expect(!fileManager.fileExists(atPath: source.path))
+    #expect(fileManager.fileExists(atPath: backup.path))
+    #expect(fileManager.fileExists(atPath: removalStaging.path))
+    try BackupVerifier.verifyCopy(source: backup, destination: removalStaging)
 }

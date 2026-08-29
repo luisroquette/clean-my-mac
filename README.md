@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/BAIXAR-PARA%20MAC-F28C38?style=for-the-badge&logo=apple&logoColor=white" alt="Baixar Clean My Mac"></a>
-  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.1.3"><img src="https://img.shields.io/badge/VERSÃO-1.1.3-201C19?style=for-the-badge" alt="Versão 1.1.3"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.2.0"><img src="https://img.shields.io/badge/VERSÃO-1.2.0-201C19?style=for-the-badge" alt="Versão 1.2.0"></a>
   <a href="https://github.com/luisroquette/clean-my-mac/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/luisroquette/clean-my-mac/ci.yml?branch=main&style=for-the-badge&label=CI" alt="Status do CI"></a>
 </p>
 
@@ -93,11 +93,11 @@ Abra **Mais opções → Preferências** e escolha:
 |---|---|
 | **Mover para a Lixeira** | Mantém o lote recuperável; o espaço só retorna quando a Lixeira for esvaziada |
 | **Lixeira + apagar o lote do app** | Apaga somente o novo lote do Clean My Mac; itens antigos da Lixeira ficam intocados |
-| **Backup em HD externo + apagar do Mac** | Copia cada artefato, compara estrutura, tamanho e SHA-256, depois remove o original |
+| **Backup em HD externo + apagar do Mac** | Copia e valida cada artefato; depois move o original para um lote exclusivo e apaga somente esse lote |
 
 O backup externo aceita somente uma pasta gravável em um volume não interno. Se
-o disco for desconectado, estiver cheio ou a cópia divergir, o original é
-preservado e a execução falha de forma fechada.
+o disco for desconectado, estiver cheio, a cópia divergir ou a exclusão falhar,
+o original permanece recuperável e a execução falha de forma fechada.
 
 ## O que mudou na v1.2.0
 

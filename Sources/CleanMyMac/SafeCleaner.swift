@@ -246,6 +246,7 @@ enum SafeCleaner {
             if index > 0 { arguments.append("-o") }
             arguments += ["-name", pattern]
         }
+        arguments += ["-o", "-path", "*/Warning/Default"]
         arguments += [
             ")", "-prune", "-o", "-type", "d", "(",
             "-name", "node_modules", "-o", "-name", ".next",
@@ -264,6 +265,7 @@ enum SafeCleaner {
         let destination: CleanupDestination
         let externalBackupPath: String?
         private var batchRoot: URL?
+        private var removalBatchRoot: URL?
         private var mustPreserveBatch = false
 
         init(destination: CleanupDestination, externalBackupPath: String?) {
@@ -307,15 +309,20 @@ enum SafeCleaner {
                    capacity < Int64(expectedBytes) {
                     throw DisposalError.insufficientExternalSpace
                 }
-                do {
-                    try FileManager.default.copyItem(at: target, to: destinationURL)
-                    try BackupVerifier.verifyCopy(source: target, destination: destinationURL)
-                } catch {
-                    try? FileManager.default.removeItem(at: destinationURL)
-                    throw error
+                let removalRoot = try ensureRemovalBatchRoot()
+                let stagedOriginal = target.pathComponents.dropFirst().reduce(removalRoot) {
+                    $0.appending(path: $1, directoryHint: .inferFromPath)
                 }
-                try FileManager.default.removeItem(at: target)
-                return .backedUp(original: target, stored: destinationURL)
+                try BackupVerifier.copyVerifiedAndStageRemoval(
+                    source: target,
+                    backup: destinationURL,
+                    removalStaging: stagedOriginal
+                )
+                return .backedUp(
+                    original: target,
+                    backup: destinationURL,
+                    stagedOriginal: stagedOriginal
+                )
             }
         }
 
@@ -327,9 +334,9 @@ enum SafeCleaner {
             switch receipt {
             case let .staged(original, stored):
                 try FileManager.default.moveItem(at: stored, to: original)
-            case let .backedUp(original, stored):
-                try FileManager.default.copyItem(at: stored, to: original)
-                try BackupVerifier.verifyCopy(source: stored, destination: original)
+            case let .backedUp(original, backup, stagedOriginal):
+                try FileManager.default.moveItem(at: stagedOriginal, to: original)
+                try BackupVerifier.verifyCopy(source: backup, destination: original)
             }
         }
 
@@ -349,24 +356,29 @@ enum SafeCleaner {
                 return true
             case .externalBackup:
                 log.append("BACKUP lote verificado: \(batchRoot.path)")
-                return true
+                guard let removalBatchRoot else { return true }
+                return deleteExactTrashBatch(removalBatchRoot, log: log)
             case .deleteBatch:
-                let escapedPath = batchRoot.path
-                    .replacingOccurrences(of: "\\", with: "\\\\")
-                    .replacingOccurrences(of: "\"", with: "\\\"")
-                let script = """
-                with timeout of 600 seconds
-                    tell application "Finder" to delete POSIX file "\(escapedPath)"
-                end timeout
-                """
-                let result = SafeCleaner.run("/usr/bin/osascript", ["-e", script])
-                guard result.code == 0, !FileManager.default.fileExists(atPath: batchRoot.path) else {
-                    log.append("ERROR lote mantido para recuperação: \(batchRoot.path) \(result.output)")
-                    return false
-                }
-                log.append("DELETE lote exato concluído: \(batchRoot.path)")
-                return true
+                return deleteExactTrashBatch(batchRoot, log: log)
             }
+        }
+
+        private func deleteExactTrashBatch(_ root: URL, log: CleanupLog) -> Bool {
+            let escapedPath = root.path
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+            let script = """
+            with timeout of 600 seconds
+                tell application "Finder" to delete POSIX file "\(escapedPath)"
+            end timeout
+            """
+            let result = SafeCleaner.run("/usr/bin/osascript", ["-e", script])
+            guard result.code == 0, !FileManager.default.fileExists(atPath: root.path) else {
+                log.append("ERROR lote mantido para recuperação: \(root.path) \(result.output)")
+                return false
+            }
+            log.append("DELETE lote exato concluído: \(root.path)")
+            return true
         }
 
         private mutating func ensureBatchRoot() throws -> URL {
@@ -388,15 +400,28 @@ enum SafeCleaner {
             batchRoot = root
             return root
         }
+
+        private mutating func ensureRemovalBatchRoot() throws -> URL {
+            if let removalBatchRoot { return removalBatchRoot }
+            let root = SafeCleaner.home
+                .appending(path: ".Trash", directoryHint: .isDirectory)
+                .appending(
+                    path: "CleanMyMac-BackupRemoval-\(Int(Date().timeIntervalSince1970))-\(UUID().uuidString)",
+                    directoryHint: .isDirectory
+                )
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            removalBatchRoot = root
+            return root
+        }
     }
 
     private enum ArtifactReceipt {
         case staged(original: URL, stored: URL)
-        case backedUp(original: URL, stored: URL)
+        case backedUp(original: URL, backup: URL, stagedOriginal: URL)
 
         var original: URL {
             switch self {
-            case let .staged(original, _), let .backedUp(original, _): original
+            case let .staged(original, _), let .backedUp(original, _, _): original
             }
         }
     }
