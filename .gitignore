@@ -1,4 +1,5 @@
 .DS_Store
+.qlaude/
 .build/
 DerivedData/
 graphify-out/
