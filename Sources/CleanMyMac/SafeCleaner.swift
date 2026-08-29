@@ -91,25 +91,20 @@ enum SafeCleaner {
     }
 
     private static func cleanGeneratedArtifacts(log: CleanupLog) -> (removed: Int, blocked: Int, failed: Int) {
-        let sizedCandidates = artifactCandidates().compactMap { candidate -> (URL, Int)? in
-            let result = run("/usr/bin/du", ["-sk", candidate.path])
-            guard result.code == 0,
-                  let first = result.output.split(whereSeparator: { $0.isWhitespace }).first,
-                  let size = Int(first),
-                  CleanupPolicy.isEligibleArtifact(
-                      name: candidate.lastPathComponent,
-                      sizeKiB: size,
-                      isSymbolicLink: false,
-                      minimumKiB: minimumArtifactKiB
-                  ) else { return nil }
-            return (candidate, size)
-        }.sorted { $0.1 > $1.1 }
-
         var removed = 0
         var blocked = 0
         var failed = 0
+        let scanStartedAt = Date()
+        let candidates = artifactCandidates()
+        let scanMilliseconds = Int(Date().timeIntervalSince(scanStartedAt) * 1_000)
+        log.append("SCAN candidatos=\(candidates.count) duracaoMs=\(scanMilliseconds)")
 
-        for (target, sizeKiB) in sizedCandidates {
+        guard let activeDirectories = activeWorkingDirectories() else {
+            log.append("BLOCK inspeção de processos indisponível")
+            return (0, candidates.count, 0)
+        }
+
+        for target in candidates {
             guard let gitRoot = gitRoot(for: target) else {
                 log.append("SKIP sem Git: \(target.path)")
                 continue
@@ -118,24 +113,30 @@ enum SafeCleaner {
                 log.append("SKIP alvo não ignorado pelo Git: \(target.path)")
                 continue
             }
-            guard let activeDirectories = activeWorkingDirectories() else {
-                blocked += 1
-                log.append("BLOCK inspeção de processos indisponível: \(target.path)")
-                continue
-            }
-            if activeDirectories.contains(where: { CleanupPolicy.pathsOverlap($0, gitRoot.path) }) {
+            if CleanupPolicy.isProjectActive(gitRoot.path, activeDirectories: activeDirectories) {
                 blocked += 1
                 log.append("BLOCK processo ativo: \(target.path)")
                 continue
             }
-
-            let statusBefore = run("/usr/bin/git", ["-C", gitRoot.path, "status", "--porcelain=v1", "-z"]).output
             guard !CleanupPolicy.isProtected(target.path, protectedPaths: protectedPaths),
                   CleanupPolicy.pathsOverlap(target.path, gitRoot.path) else {
                 blocked += 1
                 log.append("BLOCK limite protegido: \(target.path)")
                 continue
             }
+
+            let sizeResult = run("/usr/bin/du", ["-sk", target.path])
+            guard sizeResult.code == 0,
+                  let first = sizeResult.output.split(whereSeparator: { $0.isWhitespace }).first,
+                  let sizeKiB = Int(first),
+                  CleanupPolicy.isEligibleArtifact(
+                      name: target.lastPathComponent,
+                      sizeKiB: sizeKiB,
+                      isSymbolicLink: false,
+                      minimumKiB: minimumArtifactKiB
+                  ) else { continue }
+
+            let statusBefore = run("/usr/bin/git", ["-C", gitRoot.path, "status", "--porcelain=v1", "-z"]).output
 
             do {
                 try FileManager.default.removeItem(at: target)
@@ -187,30 +188,25 @@ enum SafeCleaner {
 
     private static func enumerateArtifacts(in root: URL) -> [URL] {
         guard !CleanupPolicy.isProtected(root.path, protectedPaths: protectedPaths) else { return [] }
-        let keys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey]
-        guard let enumerator = FileManager.default.enumerator(
-            at: root,
-            includingPropertiesForKeys: keys,
-            options: [.skipsPackageDescendants],
-            errorHandler: { _, _ in true }
-        ) else { return [] }
+        guard FileManager.default.fileExists(atPath: root.path) else { return [] }
 
-        var results: [URL] = []
-
-        for case let url as URL in enumerator {
-            let values = try? url.resourceValues(forKeys: Set(keys))
-            guard values?.isDirectory == true else { continue }
-            let name = url.lastPathComponent
-            if values?.isSymbolicLink == true || CleanupPolicy.shouldExcludeDirectory(named: name) {
-                enumerator.skipDescendants()
-                continue
-            }
-            if name == "node_modules" || name == ".next" {
-                results.append(url)
-                enumerator.skipDescendants()
-            }
+        var arguments = [root.path, "-type", "d", "("]
+        for (index, pattern) in CleanupPolicy.excludedDirectoryPatterns.enumerated() {
+            if index > 0 { arguments.append("-o") }
+            arguments += ["-name", pattern]
         }
-        return results
+        arguments += [
+            ")", "-prune", "-o", "-type", "d", "(",
+            "-name", "node_modules", "-o", "-name", ".next",
+            ")", "-print0", "-prune",
+        ]
+
+        let result = run("/usr/bin/find", arguments)
+        guard result.code == 0 else { return [] }
+        return result.output.split(separator: "\0").compactMap { rawPath in
+            let url = URL(filePath: String(rawPath), directoryHint: .isDirectory)
+            return CleanupPolicy.isProtected(url.path, protectedPaths: protectedPaths) ? nil : url
+        }
     }
 
     private static func activeWorkingDirectories() -> [String]? {

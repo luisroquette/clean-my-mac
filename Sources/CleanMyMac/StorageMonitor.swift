@@ -66,7 +66,10 @@ final class StorageMonitor: ObservableObject {
 
         monitoringTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(30))
+                let interval = StoragePolicy.monitoringInterval(
+                    for: self?.snapshot?.usedFraction ?? 0
+                )
+                try? await Task.sleep(for: .seconds(interval))
                 await self?.sampleNow()
             }
         }

@@ -37,6 +37,14 @@ public enum CleanupPolicy {
         excludedDirectoryNames.contains(name) || name.hasPrefix("claude-")
     }
 
+    public static var excludedDirectoryPatterns: [String] {
+        excludedDirectoryNames.sorted() + ["claude-*"]
+    }
+
+    public static func isProjectActive(_ gitRoot: String, activeDirectories: [String]) -> Bool {
+        activeDirectories.contains { pathsOverlap($0, gitRoot) }
+    }
+
     private static func normalized(_ path: String) -> String {
         path.precomposedStringWithCanonicalMapping
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))

@@ -22,7 +22,7 @@ import Testing
         lastCleanupAt: nil,
         now: now
     ))
-    #expect(!StoragePolicy.shouldRunAutomaticCleanup(
+    #expect(StoragePolicy.shouldRunAutomaticCleanup(
         usedFraction: 0.79,
         enabled: true,
         isCleaning: false,
@@ -33,7 +33,7 @@ import Testing
         usedFraction: 0.79,
         enabled: true,
         isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-301),
+        lastCleanupAt: now.addingTimeInterval(-61),
         now: now
     ))
     #expect(!StoragePolicy.shouldRunAutomaticCleanup(
@@ -43,18 +43,18 @@ import Testing
         lastCleanupAt: nil,
         now: now
     ))
-    #expect(!StoragePolicy.shouldRunAutomaticCleanup(
-        usedFraction: 0.80,
-        enabled: true,
-        isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-59),
-        now: now
-    ))
     #expect(StoragePolicy.shouldRunAutomaticCleanup(
         usedFraction: 0.80,
         enabled: true,
         isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-60),
+        lastCleanupAt: now.addingTimeInterval(-15),
+        now: now
+    ))
+    #expect(!StoragePolicy.shouldRunAutomaticCleanup(
+        usedFraction: 0.80,
+        enabled: true,
+        isCleaning: false,
+        lastCleanupAt: now.addingTimeInterval(-14),
         now: now
     ))
     #expect(!StoragePolicy.shouldRunAutomaticCleanup(
@@ -64,6 +64,8 @@ import Testing
         lastCleanupAt: now.addingTimeInterval(-121),
         now: now
     ))
+    #expect(StoragePolicy.monitoringInterval(for: 0.74) == 30)
+    #expect(StoragePolicy.monitoringInterval(for: 0.75) == 5)
 }
 
 @Test func storageSnapshotNeverReportsNegativeUsage() {
@@ -99,6 +101,16 @@ import Testing
     #expect(CleanupPolicy.shouldExcludeDirectory(named: ".claude"))
     #expect(CleanupPolicy.shouldExcludeDirectory(named: "claude-501"))
     #expect(!CleanupPolicy.shouldExcludeDirectory(named: "cfgauss-claude-site"))
+    #expect(CleanupPolicy.excludedDirectoryPatterns.contains(".claude"))
+    #expect(CleanupPolicy.excludedDirectoryPatterns.contains("claude-*"))
+    #expect(CleanupPolicy.isProjectActive(
+        "/project",
+        activeDirectories: ["/project/app"]
+    ))
+    #expect(!CleanupPolicy.isProjectActive(
+        "/project",
+        activeDirectories: ["/other/app"]
+    ))
 }
 
 @Test func cleanupPolicyKeepsArtifactsInsideTheirGitRoot() {
