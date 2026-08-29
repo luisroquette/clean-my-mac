@@ -65,9 +65,31 @@ enum SafeCleaner {
         CleanupLog(url: logURL).append(message)
     }
 
+    private static let scanFailureReasonLimit = 200
+
     static func scanFailureLogMessage(operation: String, path: String, result: CommandResult) -> String? {
         guard result.code != 0 else { return nil }
-        return "ERROR \(operation): \(path) \(result.output)"
+        return "ERROR \(operation): \(path) \(sanitizedScanFailureReason(result.output))"
+    }
+
+    /// Strips control characters (including NUL and newlines) so a scan failure never breaks
+    /// the log into multiple lines or embeds unreadable bytes, and caps the reason to a bounded
+    /// length so one failure can't dump an entire find/du result set into the log.
+    private static func sanitizedScanFailureReason(_ raw: String) -> String {
+        let cleaned = String(raw.unicodeScalars.map {
+            CharacterSet.controlCharacters.contains($0) ? " " : Character($0)
+        })
+        let collapsed = cleaned.split(separator: " ", omittingEmptySubsequences: true).joined(separator: " ")
+        guard collapsed.count > scanFailureReasonLimit else { return collapsed }
+        return "\(collapsed.prefix(scanFailureReasonLimit))…"
+    }
+
+    /// Parses the leading whitespace-separated field of `du -sk` output as kibibytes.
+    /// Returns nil when the output doesn't start with a number, distinguishing a genuine
+    /// parse failure (log-worthy) from a legitimately small/ineligible artifact.
+    static func parseDuSizeKiB(_ output: String) -> Int? {
+        guard let first = output.split(whereSeparator: { $0.isWhitespace }).first else { return nil }
+        return Int(first)
     }
 
     private static func runSynchronously(
@@ -175,9 +197,11 @@ enum SafeCleaner {
             if let message = scanFailureLogMessage(operation: "medição de tamanho", path: target.path, result: sizeResult) {
                 log.append(message)
             }
-            guard sizeResult.code == 0,
-                  let first = sizeResult.output.split(whereSeparator: { $0.isWhitespace }).first,
-                  let sizeKiB = Int(first),
+            let sizeKiB = sizeResult.code == 0 ? parseDuSizeKiB(sizeResult.output) : nil
+            if sizeResult.code == 0, sizeKiB == nil {
+                log.append("ERROR medição de tamanho: saída inesperada de du: \(target.path)")
+            }
+            guard let sizeKiB,
                   CleanupPolicy.isEligibleArtifact(
                       name: target.lastPathComponent,
                       sizeKiB: sizeKiB,

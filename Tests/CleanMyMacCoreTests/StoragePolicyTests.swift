@@ -320,3 +320,38 @@ import Testing
         result: success
     ) == nil)
 }
+
+@Test func scanFailureLogMessageSanitizesControlCharacters() {
+    let failure = CommandResult(code: 1, output: "line1\0line2\nline3\ttrailing")
+    let message = SafeCleaner.scanFailureLogMessage(
+        operation: "varredura de artefatos",
+        path: "/tmp/example",
+        result: failure
+    )
+    #expect(message == "ERROR varredura de artefatos: /tmp/example line1 line2 line3 trailing")
+    #expect(message?.contains("\0") == false)
+    #expect(message?.contains("\n") == false)
+}
+
+@Test func scanFailureLogMessageCapsReasonLength() {
+    let longOutput = String(repeating: "x", count: 5_000)
+    let failure = CommandResult(code: 1, output: longOutput)
+    let message = SafeCleaner.scanFailureLogMessage(
+        operation: "varredura de artefatos",
+        path: "/tmp/example",
+        result: failure
+    )
+    let prefix = "ERROR varredura de artefatos: /tmp/example "
+    #expect(message?.hasPrefix(prefix) == true)
+    let reason = message!.dropFirst(prefix.count)
+    #expect(reason.count <= 201)
+}
+
+@Test func parseDuSizeKiBParsesLeadingNumber() {
+    #expect(SafeCleaner.parseDuSizeKiB("1024\t/tmp/example") == 1024)
+}
+
+@Test func parseDuSizeKiBReturnsNilOnUnparseableOutput() {
+    #expect(SafeCleaner.parseDuSizeKiB("not-a-number") == nil)
+    #expect(SafeCleaner.parseDuSizeKiB("") == nil)
+}
