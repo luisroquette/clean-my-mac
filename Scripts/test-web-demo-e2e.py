@@ -25,20 +25,34 @@ def open_demo(browser, url, **context_options):
     context = browser.new_context(**context_options)
     context.route("**/*.mp4", lambda route: route.abort())
     page = context.new_page()
+    console_errors = []
+    page_errors = []
+
+    def record_console_error(message):
+        location = message.location
+        expected_media_abort = (
+            str(location.get("url", "")).endswith(".mp4")
+            and "ERR_FAILED" in message.text
+        )
+        if message.type == "error" and not expected_media_abort:
+            console_errors.append(message.text)
+
+    page.on("console", record_console_error)
+    page.on("pageerror", lambda error: page_errors.append(str(error)))
     page.goto(url)
     page.wait_for_load_state("networkidle")
-    return context, page
+    return context, page, console_errors, page_errors
 
 
 def run_e2e(url):
     with sync_playwright() as playwright:
         print("E2E: desktop", flush=True)
         browser = playwright.chromium.launch(channel="chrome", headless=True)
-        context, page = open_demo(browser, url, viewport={"width": 1440, "height": 1000})
-        console_errors = []
-        page_errors = []
-        page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
-        page.on("pageerror", lambda error: page_errors.append(str(error)))
+        context, page, console_errors, page_errors = open_demo(
+            browser,
+            url,
+            viewport={"width": 1440, "height": 1000},
+        )
 
         assert page.locator("[data-storage-console]").is_visible()
         page_text = page.locator("body").inner_text()
@@ -47,6 +61,8 @@ def run_e2e(url):
         assert "CCleaner" in page_text
         assert "agentes de programação" in page_text.lower()
         assert "um clique" in page_text.lower()
+        assert "backoff" in page_text.lower()
+        assert "discos externos não selecionados" in page_text.lower()
         assert page.locator("[data-percent]").inner_text() == "72%"
         assert page.locator("[data-state]").inner_text() == "NORMAL"
         set_storage(page, 74.9)
@@ -86,7 +102,7 @@ def run_e2e(url):
         context.close()
 
         print("E2E: lead failure", flush=True)
-        failed, page = open_demo(browser, url, viewport={"width": 1440, "height": 1000})
+        failed, page, _, _ = open_demo(browser, url, viewport={"width": 1440, "height": 1000})
         page.route(
             "https://cfgauss.com.br/api/lead/clean-my-mac",
             lambda route: route.fulfill(status=503, content_type="application/json", body='{"error":"Trello unavailable"}'),
@@ -99,19 +115,52 @@ def run_e2e(url):
         expect(page.locator("[data-download-ready]")).to_be_hidden()
         failed.close()
 
+        print("E2E: lead timeout", flush=True)
+        timed_out, page, _, _ = open_demo(browser, url, viewport={"width": 1440, "height": 1000})
+        page.evaluate("""(() => {
+            window.fetch = (_url, options) => new Promise((_resolve, reject) => {
+              options.signal.addEventListener('abort', () => {
+                reject(new DOMException('Aborted', 'AbortError'));
+              }, { once: true });
+            });
+            return null;
+        })()""")
+        page.locator('[data-lead-form] input[name="name"]').fill("Ana Silva")
+        page.locator('[data-lead-form] input[name="whatsapp"]').fill("11999998888")
+        page.locator('[data-lead-form] input[name="email"]').fill("ana@example.com")
+        page.locator('[data-lead-form] button[type="submit"]').click()
+        expect(page.locator("[data-form-status]")).to_have_text(
+            "O servidor demorou para responder. Tente novamente.",
+            timeout=15_000,
+        )
+        expect(page.locator('[data-lead-form] button[type="submit"]')).to_be_enabled()
+        timed_out.close()
+
         print("E2E: reduced motion", flush=True)
-        reduced, page = open_demo(browser, url, viewport={"width": 1440, "height": 1000}, reduced_motion="reduce")
+        reduced, page, _, _ = open_demo(
+            browser,
+            url,
+            viewport={"width": 1440, "height": 1000},
+            reduced_motion="reduce",
+        )
         set_storage(page, 81)
         expect(page.locator("[data-state]")).to_have_text("ALIVIADO", timeout=3_000)
         assert float(page.locator("#storage").input_value()) == 72
         reduced.close()
 
         print("E2E: mobile", flush=True)
-        mobile, page = open_demo(browser, url, viewport={"width": 390, "height": 844}, device_scale_factor=1)
+        mobile, page, mobile_console_errors, mobile_page_errors = open_demo(
+            browser,
+            url,
+            viewport={"width": 390, "height": 844},
+            device_scale_factor=1,
+        )
         dimensions = page.evaluate("({ client: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth })")
         assert dimensions["scroll"] == dimensions["client"], dimensions
         box = page.locator("[data-storage-console]").bounding_box()
         assert box and box["x"] >= 0 and box["x"] + box["width"] <= 390.5, box
+        assert not mobile_console_errors, mobile_console_errors
+        assert not mobile_page_errors, mobile_page_errors
         mobile.close()
         browser.close()
 

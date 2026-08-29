@@ -76,7 +76,7 @@ struct MenuBarView: View {
             isPresented: $confirmingCleanup,
             titleVisibility: .visible
         ) {
-            Button("Limpar caches e artefatos", role: .destructive) {
+            Button(cleanupConfirmationButton, role: .destructive) {
                 monitor.cleanNow()
             }
             Button("Cancelar", role: .cancel) {}
@@ -166,7 +166,15 @@ struct MenuBarView: View {
         case .deleteBatch:
             "Somente o novo lote seguro será movido para a Lixeira e apagado. Itens antigos serão preservados."
         case .externalBackup:
-            "Os artefatos seguros serão copiados para o HD externo, verificados por SHA-256 e removidos do Mac somente após a confirmação."
+            "Os artefatos seguros irão para um lote recuperável, serão copiados e verificados por SHA-256; somente esse lote será apagado."
+        }
+    }
+
+    private var cleanupConfirmationButton: String {
+        switch monitor.cleanupDestination {
+        case .trash: "Mover artefatos para a Lixeira"
+        case .deleteBatch: "Limpar caches e artefatos"
+        case .externalBackup: "Fazer backup e liberar espaço"
         }
     }
 }

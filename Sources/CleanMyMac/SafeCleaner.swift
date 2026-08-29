@@ -1,4 +1,5 @@
 import CleanMyMacCore
+import Darwin
 import Foundation
 
 struct CleanupResult: Sendable {
@@ -117,7 +118,7 @@ enum SafeCleaner {
 
         for (locations, arguments) in commands {
             guard let executable = locations.first(where: FileManager.default.isExecutableFile(atPath:)) else { continue }
-            let result = run(executable, arguments)
+            let result = runCommand(executable, arguments, timeout: 120)
             log.append("CACHE \(executable) exit=\(result.code) \(result.output)")
         }
     }
@@ -129,6 +130,12 @@ enum SafeCleaner {
         var removed = 0
         var blocked = 0
         var failed = 0
+        do {
+            try disposal.validate()
+        } catch {
+            log.append("ERROR destino indisponível: \(error.localizedDescription)")
+            return (0, 0, 1)
+        }
         let scanStartedAt = Date()
         let candidates = artifactCandidates()
         let scanMilliseconds = Int(Date().timeIntervalSince(scanStartedAt) * 1_000)
@@ -138,19 +145,12 @@ enum SafeCleaner {
             log.append("BLOCK inspeção de processos indisponível")
             return (0, candidates.count, 0)
         }
-        do {
-            try disposal.validate()
-        } catch {
-            log.append("ERROR destino indisponível: \(error.localizedDescription)")
-            return (0, 0, 1)
-        }
-
         for target in candidates {
             guard let gitRoot = gitRoot(for: target) else {
                 log.append("SKIP sem Git: \(target.path)")
                 continue
             }
-            guard run("/usr/bin/git", ["-C", gitRoot.path, "check-ignore", "-q", "--", target.path]).code == 0 else {
+            guard runCommand("/usr/bin/git", ["-C", gitRoot.path, "check-ignore", "-q", "--", target.path]).code == 0 else {
                 log.append("SKIP alvo não ignorado pelo Git: \(target.path)")
                 continue
             }
@@ -166,7 +166,7 @@ enum SafeCleaner {
                 continue
             }
 
-            let sizeResult = run("/usr/bin/du", ["-sk", target.path])
+            let sizeResult = runCommand("/usr/bin/du", ["-sk", target.path])
             guard sizeResult.code == 0,
                   let first = sizeResult.output.split(whereSeparator: { $0.isWhitespace }).first,
                   let sizeKiB = Int(first),
@@ -177,7 +177,26 @@ enum SafeCleaner {
                       minimumKiB: minimumArtifactKiB
                   ) else { continue }
 
-            let statusBefore = run("/usr/bin/git", ["-C", gitRoot.path, "status", "--porcelain=v1", "-z"]).output
+            guard let currentActiveDirectories = activeWorkingDirectories() else {
+                blocked += 1
+                log.append("BLOCK rechecagem de processos indisponível: \(target.path)")
+                continue
+            }
+            if CleanupPolicy.isProjectActive(gitRoot.path, activeDirectories: currentActiveDirectories) {
+                blocked += 1
+                log.append("BLOCK processo iniciou durante a varredura: \(target.path)")
+                continue
+            }
+
+            let statusBefore = runCommand(
+                "/usr/bin/git",
+                ["-C", gitRoot.path, "status", "--porcelain=v1", "-z"]
+            )
+            guard statusBefore.code == 0 else {
+                blocked += 1
+                log.append("BLOCK Git indisponível antes da limpeza: \(target.path)")
+                continue
+            }
 
             let receipt: ArtifactReceipt
             do {
@@ -191,8 +210,16 @@ enum SafeCleaner {
                 continue
             }
 
-            let statusAfter = run("/usr/bin/git", ["-C", gitRoot.path, "status", "--porcelain=v1", "-z"]).output
-            guard statusBefore == statusAfter, !FileManager.default.fileExists(atPath: target.path) else {
+            let statusAfter = runCommand(
+                "/usr/bin/git",
+                ["-C", gitRoot.path, "status", "--porcelain=v1", "-z"]
+            )
+            guard CleanupPolicy.isVerifiedAfterCleanup(
+                statusBefore: statusBefore.output,
+                statusAfter: statusAfter.output,
+                statusAfterExitCode: statusAfter.code,
+                targetStillExists: FileManager.default.fileExists(atPath: target.path)
+            ) else {
                 do {
                     try disposal.restore(receipt)
                 } catch {
@@ -253,7 +280,7 @@ enum SafeCleaner {
             ")", "-print0", "-prune",
         ]
 
-        let result = run("/usr/bin/find", arguments)
+        let result = runCommand("/usr/bin/find", arguments)
         guard result.code == 0 else { return [] }
         return result.output.split(separator: "\0").compactMap { rawPath in
             let url = URL(filePath: String(rawPath), directoryHint: .isDirectory)
@@ -267,6 +294,7 @@ enum SafeCleaner {
         private var batchRoot: URL?
         private var removalBatchRoot: URL?
         private var mustPreserveBatch = false
+        private var successfulItems = 0
 
         init(destination: CleanupDestination, externalBackupPath: String?) {
             self.destination = destination
@@ -302,6 +330,7 @@ enum SafeCleaner {
             switch destination {
             case .trash, .deleteBatch:
                 try FileManager.default.moveItem(at: target, to: destinationURL)
+                successfulItems += 1
                 return .staged(original: target, stored: destinationURL)
             case .externalBackup:
                 let values = try root.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
@@ -313,11 +342,21 @@ enum SafeCleaner {
                 let stagedOriginal = target.pathComponents.dropFirst().reduce(removalRoot) {
                     $0.appending(path: $1, directoryHint: .inferFromPath)
                 }
-                try BackupVerifier.copyVerifiedAndStageRemoval(
-                    source: target,
-                    backup: destinationURL,
-                    removalStaging: stagedOriginal
-                )
+                do {
+                    try BackupVerifier.copyVerifiedAndStageRemoval(
+                        source: target,
+                        backup: destinationURL,
+                        removalStaging: stagedOriginal
+                    )
+                } catch {
+                    if FileManager.default.fileExists(atPath: stagedOriginal.path)
+                        || !FileManager.default.fileExists(atPath: target.path) {
+                        mustPreserveBatch = true
+                        throw DisposalError.originalUnavailable
+                    }
+                    throw error
+                }
+                successfulItems += 1
                 return .backedUp(
                     original: target,
                     backup: destinationURL,
@@ -348,7 +387,23 @@ enum SafeCleaner {
             guard let batchRoot else { return true }
             if mustPreserveBatch {
                 log.append("ERROR lote mantido para recuperação: \(batchRoot.path)")
+                if let removalBatchRoot {
+                    log.append("ERROR original local preservado para recuperação: \(removalBatchRoot.path)")
+                }
                 return false
+            }
+            if successfulItems == 0 {
+                try? FileManager.default.removeItem(at: batchRoot)
+                if let removalBatchRoot {
+                    try? FileManager.default.removeItem(at: removalBatchRoot)
+                }
+                guard !FileManager.default.fileExists(atPath: batchRoot.path),
+                      removalBatchRoot.map({ !FileManager.default.fileExists(atPath: $0.path) }) ?? true else {
+                    log.append("ERROR lote sem itens confirmados não pôde ser descartado")
+                    return false
+                }
+                log.append("CLEAN lote sem itens confirmados descartado")
+                return true
             }
             switch destination {
             case .trash:
@@ -372,7 +427,7 @@ enum SafeCleaner {
                 tell application "Finder" to delete POSIX file "\(escapedPath)"
             end timeout
             """
-            let result = SafeCleaner.run("/usr/bin/osascript", ["-e", script])
+            let result = SafeCleaner.runCommand("/usr/bin/osascript", ["-e", script], timeout: 620)
             guard result.code == 0, !FileManager.default.fileExists(atPath: root.path) else {
                 log.append("ERROR lote mantido para recuperação: \(root.path) \(result.output)")
                 return false
@@ -429,6 +484,7 @@ enum SafeCleaner {
     private enum DisposalError: LocalizedError {
         case externalDriveUnavailable
         case insufficientExternalSpace
+        case originalUnavailable
 
         var errorDescription: String? {
             switch self {
@@ -436,12 +492,14 @@ enum SafeCleaner {
                 "O HD externo escolhido não está montado ou não permite gravação."
             case .insufficientExternalSpace:
                 "O HD externo não tem espaço livre suficiente para verificar o backup."
+            case .originalUnavailable:
+                "O original não pôde ser confirmado nem restaurado; os lotes foram preservados."
             }
         }
     }
 
     private static func activeWorkingDirectories() -> [String]? {
-        let result = run("/usr/sbin/lsof", [
+        let result = runCommand("/usr/sbin/lsof", [
             "-a", "-u", NSUserName(), "-d", "cwd", "-Fn",
         ])
         guard result.code == 0 else { return nil }
@@ -451,41 +509,80 @@ enum SafeCleaner {
     }
 
     private static func gitRoot(for target: URL) -> URL? {
-        let result = run("/usr/bin/git", ["-C", target.deletingLastPathComponent().path, "rev-parse", "--show-toplevel"])
+        let result = runCommand("/usr/bin/git", ["-C", target.deletingLastPathComponent().path, "rev-parse", "--show-toplevel"])
         guard result.code == 0 else { return nil }
         let path = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
         return path.isEmpty ? nil : URL(filePath: path)
     }
 
-    private static func run(_ executable: String, _ arguments: [String]) -> CommandResult {
+    static func runCommand(
+        _ executable: String,
+        _ arguments: [String],
+        timeout: TimeInterval = 60
+    ) -> CommandResult {
+        let fileManager = FileManager.default
+        let outputURL = fileManager.temporaryDirectory
+            .appending(path: "CleanMyMac-command-\(UUID().uuidString).log")
+        guard fileManager.createFile(atPath: outputURL.path, contents: nil),
+              let outputHandle = try? FileHandle(forWritingTo: outputURL) else {
+            return CommandResult(code: -1, output: "não foi possível criar a saída temporária")
+        }
+        defer {
+            try? outputHandle.close()
+            try? fileManager.removeItem(at: outputURL)
+        }
+
         let process = Process()
-        let pipe = Pipe()
+        let terminated = DispatchSemaphore(value: 0)
         process.executableURL = URL(filePath: executable)
         process.arguments = arguments
-        process.standardOutput = pipe
-        process.standardError = pipe
+        process.standardOutput = outputHandle
+        process.standardError = outputHandle
+        process.terminationHandler = { _ in terminated.signal() }
         do {
             try process.run()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            process.waitUntilExit()
-            return CommandResult(code: process.terminationStatus, output: String(decoding: data, as: UTF8.self))
+            let timedOut = terminated.wait(timeout: .now() + timeout) == .timedOut
+            if timedOut {
+                process.terminate()
+                if terminated.wait(timeout: .now() + 5) == .timedOut {
+                    kill(process.processIdentifier, SIGKILL)
+                    _ = terminated.wait(timeout: .now() + 2)
+                }
+            } else {
+                process.waitUntilExit()
+            }
+            try? outputHandle.synchronize()
+            let data = (try? Data(contentsOf: outputURL)) ?? Data()
+            let output = String(decoding: data, as: UTF8.self)
+            return timedOut
+                ? CommandResult(code: 124, output: "tempo limite de \(Int(timeout)) segundos excedido")
+                : CommandResult(code: process.terminationStatus, output: output)
         } catch {
             return CommandResult(code: -1, output: error.localizedDescription)
         }
     }
 }
 
-private struct CommandResult: Sendable {
+struct CommandResult: Sendable {
     let code: Int32
     let output: String
 }
 
 private struct CleanupLog: Sendable {
     let url: URL
+    private static let lock = NSLock()
 
     func append(_ message: String) {
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
         let fileManager = FileManager.default
         try? fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        if let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+           CleanupLogPolicy.shouldRotate(size: UInt64(size)) {
+            let previous = url.deletingLastPathComponent().appending(path: "clean-my-mac.previous.log")
+            try? fileManager.removeItem(at: previous)
+            try? fileManager.moveItem(at: url, to: previous)
+        }
         if !fileManager.fileExists(atPath: url.path) {
             fileManager.createFile(atPath: url.path, contents: nil)
         }

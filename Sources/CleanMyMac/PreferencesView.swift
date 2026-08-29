@@ -11,7 +11,13 @@ struct PreferencesView: View {
                     "Depois da verificação segura",
                     selection: Binding(
                         get: { monitor.cleanupDestination },
-                        set: { monitor.setCleanupDestination($0) }
+                        set: { destination in
+                            if destination == .externalBackup, !monitor.externalBackupReady {
+                                monitor.chooseExternalBackupFolder()
+                            } else {
+                                monitor.setCleanupDestination(destination)
+                            }
+                        }
                     )
                 ) {
                     Text("Mover para a Lixeira").tag(CleanupDestination.trash)
@@ -29,10 +35,16 @@ struct PreferencesView: View {
                 Section("HD externo") {
                     LabeledContent("Pasta") {
                         Text(monitor.externalBackupPath ?? "Nenhuma selecionada")
-                            .foregroundStyle(monitor.externalBackupPath == nil ? .orange : .secondary)
+                            .foregroundStyle(monitor.externalBackupReady ? Color.secondary : Color.orange)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
+                    Label(
+                        monitor.externalBackupReady ? "HD externo pronto" : "HD externo desconectado ou indisponível",
+                        systemImage: monitor.externalBackupReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(monitor.externalBackupReady ? Color.green : Color.orange)
                     Button("Escolher pasta…") {
                         monitor.chooseExternalBackupFolder()
                     }
@@ -57,7 +69,7 @@ struct PreferencesView: View {
         case .deleteBatch:
             "Apaga somente o lote criado pelo app e preserva tudo que já estava na Lixeira."
         case .externalBackup:
-            "Copia, compara cada arquivo por SHA-256 e só então remove o original do Mac."
+            "Move o original para um lote recuperável, cria o backup com SHA-256 e apaga somente esse lote."
         }
     }
 

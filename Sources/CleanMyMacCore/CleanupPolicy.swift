@@ -45,6 +45,15 @@ public enum CleanupPolicy {
         activeDirectories.contains { pathsOverlap($0, gitRoot) }
     }
 
+    public static func isVerifiedAfterCleanup(
+        statusBefore: String,
+        statusAfter: String,
+        statusAfterExitCode: Int32,
+        targetStillExists: Bool
+    ) -> Bool {
+        statusAfterExitCode == 0 && statusBefore == statusAfter && !targetStillExists
+    }
+
     private static func normalized(_ path: String) -> String {
         path.precomposedStringWithCanonicalMapping
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
@@ -55,5 +64,13 @@ public enum CleanupPolicy {
         return components.indices.dropLast().contains {
             components[$0] == "Warning" && components[components.index(after: $0)] == "Default"
         }
+    }
+}
+
+public enum CleanupLogPolicy {
+    public static let maximumBytes: UInt64 = 5 * 1_024 * 1_024
+
+    public static func shouldRotate(size: UInt64) -> Bool {
+        size >= maximumBytes
     }
 }

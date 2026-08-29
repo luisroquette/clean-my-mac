@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/BAIXAR-PARA%20MAC-F28C38?style=for-the-badge&logo=apple&logoColor=white" alt="Baixar Clean My Mac"></a>
-  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.2.0"><img src="https://img.shields.io/badge/VERSÃO-1.2.0-201C19?style=for-the-badge" alt="Versão 1.2.0"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.2.1"><img src="https://img.shields.io/badge/VERSÃO-1.2.1-201C19?style=for-the-badge" alt="Versão 1.2.1"></a>
   <a href="https://github.com/luisroquette/clean-my-mac/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/luisroquette/clean-my-mac/ci.yml?branch=main&style=for-the-badge&label=CI" alt="Status do CI"></a>
 </p>
 
@@ -61,7 +61,7 @@ flowchart LR
     E --> F{Git ignorado,\nregenerável e inativo?}
     F -->|não| G[Preservar e registrar]
     F -->|sim| H[Remover e verificar]
-    B -->|80% ou mais| I[Retry automático\na cada 15 segundos]
+    B -->|80% ou mais| I[Retry automático\ncom backoff inteligente]
     I --> E
 ```
 
@@ -75,7 +75,7 @@ interface. Se o aplicativo exibe **80%**, o retry de proteção já está ativo.
 | Caches de npm, uv, Bun, Deno e Homebrew | Documentos, Mesa, Downloads e mídia pessoal |
 | `node_modules` e `.next` com 100 MB ou mais | Fontes rastreadas ou conteúdo não ignorado pelo Git |
 | Artefatos ignorados dentro de um repositório Git | Projetos usados por qualquer processo do utilizador |
-| Somente após verificar Git e processos novamente | Lixeira, Docker, credenciais e discos externos |
+| Somente após verificar Git e processos novamente | Lixeira, Docker, credenciais e discos externos não selecionados |
 
 A inspeção de processos falha de forma fechada: se o macOS não permitir
 confirmar que um projeto está inativo, o alvo é preservado. O Git é comparado
@@ -99,12 +99,13 @@ O backup externo aceita somente uma pasta gravável em um volume não interno. S
 o disco for desconectado, estiver cheio, a cópia divergir ou a exclusão falhar,
 o original permanece recuperável e a execução falha de forma fechada.
 
-## O que mudou na v1.2.0
+## O que mudou na v1.2.1
 
 - Preferências com Lixeira, exclusão do lote exato ou backup externo verificado.
 - Backup externo preserva o original até a validação SHA-256 terminar.
 - Varredura nativa encontra `.next` e `node_modules` sem atravessar caches internos.
-- Retry reduzido para 15 segundos assim que o SSD alcança 80%.
+- Retry de 15 segundos após progresso; ciclos sem efeito recuam para 5 minutos e emergências em 95% continuam a cada 15 segundos.
+- Log local limitado a 5 MB, com uma rotação anterior preservada.
 - Monitoramento acelerado para 5 segundos a partir de 75%.
 - Projetos ativos são descartados antes da medição lenta de tamanho.
 - Temporários `claude-*` continuam permanentemente excluídos da limpeza.

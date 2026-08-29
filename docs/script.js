@@ -139,13 +139,16 @@ if (typeof window !== 'undefined') {
       submit.disabled = true;
       status.textContent = 'Registrando seu download…';
       status.dataset.kind = 'pending';
+      const controller = new AbortController();
+      const requestTimeout = window.setTimeout(() => controller.abort(), 12_000);
 
       try {
         const fields = new FormData(leadForm);
         const response = await fetch('https://cfgauss.com.br/api/lead/clean-my-mac', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(Object.fromEntries(fields))
+          body: JSON.stringify(Object.fromEntries(fields)),
+          signal: controller.signal
         });
         const result = await response.json();
         if (!response.ok || !result.success || !result.downloadUrl) throw new Error(result.error || 'Não foi possível liberar o download.');
@@ -154,9 +157,13 @@ if (typeof window !== 'undefined') {
         ready.hidden = false;
         ready.focus();
       } catch (error) {
-        status.textContent = error.message || 'Não foi possível liberar o download. Tente novamente.';
+        status.textContent = error.name === 'AbortError'
+          ? 'O servidor demorou para responder. Tente novamente.'
+          : error.message || 'Não foi possível liberar o download. Tente novamente.';
         status.dataset.kind = 'error';
         submit.disabled = false;
+      } finally {
+        window.clearTimeout(requestTimeout);
       }
     });
   }

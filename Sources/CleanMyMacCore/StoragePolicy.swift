@@ -32,8 +32,10 @@ public enum StoragePolicy {
     public static let warningResetThreshold = 0.73
     public static let cleanupCooldown: TimeInterval = 60
     public static let hardLimitCleanupCooldown: TimeInterval = 15
+    public static let noProgressCleanupCooldown: TimeInterval = 300
     public static let normalMonitoringInterval: TimeInterval = 30
     public static let pressureMonitoringInterval: TimeInterval = 5
+    public static let meaningfulProgressBytes: UInt64 = 100 * 1_024 * 1_024
 
     public static func level(for usedFraction: Double) -> StorageLevel {
         if reaches(usedFraction, threshold: cleanupThreshold) { return .critical }
@@ -50,15 +52,28 @@ public enum StoragePolicy {
         enabled: Bool,
         isCleaning: Bool,
         lastCleanupAt: Date?,
+        lastCleanupMadeProgress: Bool = true,
         now: Date = Date()
     ) -> Bool {
         guard enabled, !isCleaning, reaches(usedFraction, threshold: cleanupThreshold) else { return false }
         guard let lastCleanupAt else { return true }
-        return now.timeIntervalSince(lastCleanupAt) >= cleanupCooldown(for: usedFraction)
+        return now.timeIntervalSince(lastCleanupAt) >= cleanupCooldown(
+            for: usedFraction,
+            lastCleanupMadeProgress: lastCleanupMadeProgress
+        )
     }
 
-    public static func cleanupCooldown(for usedFraction: Double) -> TimeInterval {
-        isAtOrAboveHardLimit(usedFraction) ? hardLimitCleanupCooldown : cleanupCooldown
+    public static func cleanupCooldown(
+        for usedFraction: Double,
+        lastCleanupMadeProgress: Bool = true
+    ) -> TimeInterval {
+        if reaches(usedFraction, threshold: emergencyThreshold) {
+            return hardLimitCleanupCooldown
+        }
+        if !lastCleanupMadeProgress {
+            return noProgressCleanupCooldown
+        }
+        return isAtOrAboveHardLimit(usedFraction) ? hardLimitCleanupCooldown : cleanupCooldown
     }
 
     public static func monitoringInterval(for usedFraction: Double) -> TimeInterval {
@@ -69,6 +84,10 @@ public enum StoragePolicy {
 
     public static func isAtOrAboveHardLimit(_ usedFraction: Double) -> Bool {
         reaches(usedFraction, threshold: hardLimit)
+    }
+
+    public static func madeMeaningfulProgress(removedTargets: Int, freedBytes: UInt64) -> Bool {
+        removedTargets > 0 || freedBytes >= meaningfulProgressBytes
     }
 
     private static func reaches(_ usedFraction: Double, threshold: Double) -> Bool {

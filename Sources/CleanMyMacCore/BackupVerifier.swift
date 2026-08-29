@@ -2,12 +2,27 @@ import CryptoKit
 import Darwin
 import Foundation
 
-public enum BackupVerificationError: Error {
+public enum BackupVerificationError: LocalizedError {
     case missingDirectory(String)
+    case unreadableEntry(String)
     case entrySetMismatch(sourceOnly: [String], destinationOnly: [String])
     case entryTypeMismatch(String)
     case contentMismatch(String)
     case unsupportedEntry(String)
+    case rollbackFailed(original: String, staging: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case let .missingDirectory(path): "Diretório ausente durante a verificação: \(path)"
+        case let .unreadableEntry(message): "Entrada ilegível durante a verificação: \(message)"
+        case .entrySetMismatch: "A lista de arquivos do backup diverge do original."
+        case let .entryTypeMismatch(path): "O tipo da entrada diverge no backup: \(path)"
+        case let .contentMismatch(path): "O conteúdo diverge no backup: \(path)"
+        case let .unsupportedEntry(path): "Entrada não suportada no backup: \(path)"
+        case let .rollbackFailed(original, staging):
+            "Falha ao restaurar \(original); cópia recuperável preservada em \(staging)."
+        }
+    }
 }
 
 public enum BackupVerifier {
@@ -17,20 +32,28 @@ public enum BackupVerifier {
         removalStaging: URL
     ) throws {
         let fileManager = FileManager.default
+        try fileManager.createDirectory(
+            at: removalStaging.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try fileManager.moveItem(at: source, to: removalStaging)
         do {
             try fileManager.createDirectory(
                 at: backup.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            try fileManager.copyItem(at: source, to: backup)
-            try verifyCopy(source: source, destination: backup)
-            try fileManager.createDirectory(
-                at: removalStaging.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            try fileManager.moveItem(at: source, to: removalStaging)
+            try fileManager.copyItem(at: removalStaging, to: backup)
+            try verifyCopy(source: removalStaging, destination: backup)
         } catch {
             try? fileManager.removeItem(at: backup)
+            do {
+                try fileManager.moveItem(at: removalStaging, to: source)
+            } catch {
+                throw BackupVerificationError.rollbackFailed(
+                    original: source.path,
+                    staging: removalStaging.path
+                )
+            }
             throw error
         }
     }
@@ -83,11 +106,15 @@ public enum BackupVerifier {
         let keys: Set<URLResourceKey> = [
             .isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey,
         ]
+        var traversalError: Error?
         guard let enumerator = FileManager.default.enumerator(
             at: canonicalRoot,
             includingPropertiesForKeys: Array(keys),
             options: [],
-            errorHandler: { _, _ in false }
+            errorHandler: { _, error in
+                traversalError = error
+                return false
+            }
         ) else {
             throw BackupVerificationError.missingDirectory(root.path)
         }
@@ -113,6 +140,9 @@ public enum BackupVerifier {
             } else {
                 throw BackupVerificationError.unsupportedEntry(relativePath)
             }
+        }
+        if let traversalError {
+            throw BackupVerificationError.unreadableEntry(traversalError.localizedDescription)
         }
         return result
     }

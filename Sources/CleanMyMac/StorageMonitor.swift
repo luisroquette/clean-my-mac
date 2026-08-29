@@ -24,6 +24,7 @@ final class StorageMonitor: ObservableObject {
     private var monitoringTask: Task<Void, Never>?
     private var warningLatched: Bool
     private var lastCleanupAt: Date?
+    private var lastCleanupMadeProgress = true
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -64,6 +65,11 @@ final class StorageMonitor: ObservableObject {
     }
 
     var logURL: URL { SafeCleaner.logURL }
+
+    var externalBackupReady: Bool {
+        guard let externalBackupPath else { return false }
+        return isWritableExternalFolder(URL(filePath: externalBackupPath, directoryHint: .isDirectory))
+    }
 
     func start() async {
         guard monitoringTask == nil else { return }
@@ -115,6 +121,10 @@ final class StorageMonitor: ObservableObject {
                 externalBackupPath: externalBackupPath
             )
             let now = Date()
+            lastCleanupMadeProgress = StoragePolicy.madeMeaningfulProgress(
+                removedTargets: result.removedTargets,
+                freedBytes: result.freedBytes
+            )
             lastCleanupAt = now
             defaults.set(now, forKey: Keys.lastCleanupAt)
             isCleaning = false
@@ -124,10 +134,13 @@ final class StorageMonitor: ObservableObject {
             let percent = snapshot?.usedPercent ?? 0
             if percent >= Int(StoragePolicy.hardLimit * 100) {
                 let fraction = snapshot?.usedFraction ?? StoragePolicy.hardLimit
-                let retrySeconds = Int(StoragePolicy.cleanupCooldown(for: fraction))
+                let retrySeconds = Int(StoragePolicy.cleanupCooldown(
+                    for: fraction,
+                    lastCleanupMadeProgress: lastCleanupMadeProgress
+                ))
                 await notify(
                     title: "SSD acima do limite seguro",
-                    body: "A limpeza segura terminou, mas o disco continua em \(percent)%. Nova tentativa em \(retrySeconds) segundos.",
+                    body: "A limpeza segura terminou, mas o disco continua em \(percent)%. Nova tentativa em \(retryDescription(retrySeconds)).",
                     critical: true
                 )
             } else {
@@ -155,11 +168,12 @@ final class StorageMonitor: ObservableObject {
     }
 
     func setCleanupDestination(_ destination: CleanupDestination) {
+        guard destination != .externalBackup || externalBackupReady else {
+            lastAction = "Escolha uma pasta em um HD externo antes de ativar este destino."
+            return
+        }
         cleanupDestination = destination
         defaults.set(destination.rawValue, forKey: Keys.cleanupDestination)
-        if destination == .externalBackup, externalBackupPath == nil {
-            lastAction = "Escolha uma pasta em um HD externo antes da próxima limpeza."
-        }
     }
 
     func chooseExternalBackupFolder() {
@@ -173,21 +187,14 @@ final class StorageMonitor: ObservableObject {
         panel.directoryURL = URL(filePath: "/Volumes", directoryHint: .isDirectory)
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
-        do {
-            let values = try url.resourceValues(forKeys: [.volumeIsInternalKey, .volumeIsReadOnlyKey])
-            guard CleanupDestinationPolicy.isExternalBackupPath(url.path),
-                  values.volumeIsInternal == false,
-                  values.volumeIsReadOnly != true else {
-                lastAction = "Escolha uma pasta gravável em um HD externo."
-                return
-            }
-            externalBackupPath = url.standardizedFileURL.path
-            defaults.set(externalBackupPath, forKey: Keys.externalBackupPath)
-            setCleanupDestination(.externalBackup)
-            lastAction = "Backup externo configurado."
-        } catch {
-            lastAction = "Não foi possível validar o HD externo: \(error.localizedDescription)"
+        guard isWritableExternalFolder(url) else {
+            lastAction = "Escolha uma pasta gravável em um HD externo."
+            return
         }
+        externalBackupPath = url.standardizedFileURL.path
+        defaults.set(externalBackupPath, forKey: Keys.externalBackupPath)
+        setCleanupDestination(.externalBackup)
+        lastAction = "Backup externo configurado."
     }
 
     private func react(to sample: StorageSnapshot, allowAutomation: Bool) async {
@@ -200,7 +207,8 @@ final class StorageMonitor: ObservableObject {
             usedFraction: sample.usedFraction,
             enabled: automaticCleanupEnabled,
             isCleaning: isCleaning,
-            lastCleanupAt: lastCleanupAt
+            lastCleanupAt: lastCleanupAt,
+            lastCleanupMadeProgress: lastCleanupMadeProgress
         ) {
             SafeCleaner.record("TRIGGER automático uso=\(sample.usedPercent)%")
             await notify(
@@ -241,6 +249,22 @@ final class StorageMonitor: ObservableObject {
                 trigger: nil
             )
         )
+    }
+
+    private func retryDescription(_ seconds: Int) -> String {
+        seconds >= 60 && seconds.isMultiple(of: 60)
+            ? "\(seconds / 60) minutos"
+            : "\(seconds) segundos"
+    }
+
+    private func isWritableExternalFolder(_ url: URL) -> Bool {
+        guard CleanupDestinationPolicy.isExternalBackupPath(url.path),
+              FileManager.default.fileExists(atPath: url.path),
+              FileManager.default.isWritableFile(atPath: url.path),
+              let values = try? url.resourceValues(
+                forKeys: [.volumeIsInternalKey, .volumeIsReadOnlyKey]
+              ) else { return false }
+        return values.volumeIsInternal == false && values.volumeIsReadOnly != true
     }
 
     private func configureLoginItemOnFirstLaunch() {
