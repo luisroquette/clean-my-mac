@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/BAIXAR-PARA%20MAC-F28C38?style=for-the-badge&logo=apple&logoColor=white" alt="Baixar Clean My Mac"></a>
-  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.2.2"><img src="https://img.shields.io/badge/VERSÃO-1.2.2-201C19?style=for-the-badge" alt="Versão 1.2.2"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.2.3"><img src="https://img.shields.io/badge/VERSÃO-1.2.3-201C19?style=for-the-badge" alt="Versão 1.2.3"></a>
   <a href="https://github.com/luisroquette/clean-my-mac/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/luisroquette/clean-my-mac/ci.yml?branch=main&style=for-the-badge&label=CI" alt="Status do CI"></a>
 </p>
 
@@ -99,12 +99,9 @@ O backup externo aceita somente uma pasta gravável em um volume não interno. S
 o disco for desconectado, estiver cheio, a cópia divergir ou a exclusão falhar,
 o original permanece recuperável e a execução falha de forma fechada.
 
-## O que mudou na v1.2.2
+## O que mudou na v1.2.3
 
-- `docs/ARCHITECTURE.md` documenta a separação de módulos e o modelo de segurança de execução de comandos.
-- Falhas de `find`/`du` durante a varredura de artefatos agora ficam registradas no log, em vez de descartar o candidato em silêncio.
-- Mensagens de falha de varredura são higienizadas (sem bytes de controle/NUL) e limitadas em tamanho, para não estourar o log.
-- O resumo de cada limpeza agora conta falhas de varredura junto das falhas de disposição.
+- Correção: a sanitização de mensagens de falha de varredura (v1.2.2) limpava a saída do comando mas não o caminho do arquivo — um caminho com quebra de linha embutida ainda podia corromper o log em múltiplas linhas. Agora ambos passam pela mesma limpeza.
 
 ## Instalação
 
