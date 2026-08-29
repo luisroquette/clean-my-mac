@@ -16,7 +16,7 @@ let package = Package(
         ),
         .testTarget(
             name: "CleanMyMacCoreTests",
-            dependencies: ["CleanMyMacCore"]
+            dependencies: ["CleanMyMacCore", "CleanMyMac"]
         ),
     ]
 )

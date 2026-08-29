@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+@testable import CleanMyMac
 @testable import CleanMyMacCore
 
 @Test func thresholdsAndCooldown() {
@@ -22,7 +23,7 @@ import Testing
         lastCleanupAt: nil,
         now: now
     ))
-    #expect(!StoragePolicy.shouldRunAutomaticCleanup(
+    #expect(StoragePolicy.shouldRunAutomaticCleanup(
         usedFraction: 0.79,
         enabled: true,
         isCleaning: false,
@@ -33,7 +34,7 @@ import Testing
         usedFraction: 0.79,
         enabled: true,
         isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-301),
+        lastCleanupAt: now.addingTimeInterval(-61),
         now: now
     ))
     #expect(!StoragePolicy.shouldRunAutomaticCleanup(
@@ -43,18 +44,18 @@ import Testing
         lastCleanupAt: nil,
         now: now
     ))
-    #expect(!StoragePolicy.shouldRunAutomaticCleanup(
-        usedFraction: 0.80,
-        enabled: true,
-        isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-59),
-        now: now
-    ))
     #expect(StoragePolicy.shouldRunAutomaticCleanup(
         usedFraction: 0.80,
         enabled: true,
         isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-60),
+        lastCleanupAt: now.addingTimeInterval(-15),
+        now: now
+    ))
+    #expect(!StoragePolicy.shouldRunAutomaticCleanup(
+        usedFraction: 0.80,
+        enabled: true,
+        isCleaning: false,
+        lastCleanupAt: now.addingTimeInterval(-14),
         now: now
     ))
     #expect(!StoragePolicy.shouldRunAutomaticCleanup(
@@ -62,6 +63,32 @@ import Testing
         enabled: false,
         isCleaning: false,
         lastCleanupAt: now.addingTimeInterval(-121),
+        now: now
+    ))
+    #expect(StoragePolicy.monitoringInterval(for: 0.74) == 30)
+    #expect(StoragePolicy.monitoringInterval(for: 0.75) == 5)
+    #expect(!StoragePolicy.madeMeaningfulProgress(removedTargets: 0, freedBytes: 1_376_256))
+    #expect(StoragePolicy.madeMeaningfulProgress(removedTargets: 1, freedBytes: 0))
+    #expect(StoragePolicy.madeMeaningfulProgress(
+        removedTargets: 0,
+        freedBytes: StoragePolicy.meaningfulProgressBytes
+    ))
+    #expect(StoragePolicy.cleanupCooldown(for: 0.81, lastCleanupMadeProgress: false) == 300)
+    #expect(StoragePolicy.cleanupCooldown(for: 0.95, lastCleanupMadeProgress: false) == 15)
+    #expect(!StoragePolicy.shouldRunAutomaticCleanup(
+        usedFraction: 0.81,
+        enabled: true,
+        isCleaning: false,
+        lastCleanupAt: now.addingTimeInterval(-299),
+        lastCleanupMadeProgress: false,
+        now: now
+    ))
+    #expect(StoragePolicy.shouldRunAutomaticCleanup(
+        usedFraction: 0.81,
+        enabled: true,
+        isCleaning: false,
+        lastCleanupAt: now.addingTimeInterval(-300),
+        lastCleanupMadeProgress: false,
         now: now
     ))
 }
@@ -77,6 +104,14 @@ import Testing
     let protected = ["/Users/example/Arquivos Públicos"]
     let decomposed = "/Users/example/Arquivos Públicos/Mac/Warning/Default"
     #expect(CleanupPolicy.isProtected(decomposed, protectedPaths: protected))
+    #expect(CleanupPolicy.isProtected(
+        "/Users/example/Projects/client/Warning/Default/node_modules",
+        protectedPaths: []
+    ))
+    #expect(!CleanupPolicy.isProtected(
+        "/Users/example/Projects/client/Warning/Preview/node_modules",
+        protectedPaths: []
+    ))
     #expect(CleanupPolicy.pathsOverlap("/project", "/project/worktree"))
     #expect(CleanupPolicy.isEligibleArtifact(
         name: "node_modules",
@@ -99,6 +134,16 @@ import Testing
     #expect(CleanupPolicy.shouldExcludeDirectory(named: ".claude"))
     #expect(CleanupPolicy.shouldExcludeDirectory(named: "claude-501"))
     #expect(!CleanupPolicy.shouldExcludeDirectory(named: "cfgauss-claude-site"))
+    #expect(CleanupPolicy.excludedDirectoryPatterns.contains(".claude"))
+    #expect(CleanupPolicy.excludedDirectoryPatterns.contains("claude-*"))
+    #expect(CleanupPolicy.isProjectActive(
+        "/project",
+        activeDirectories: ["/project/app"]
+    ))
+    #expect(!CleanupPolicy.isProjectActive(
+        "/project",
+        activeDirectories: ["/other/app"]
+    ))
 }
 
 @Test func cleanupPolicyKeepsArtifactsInsideTheirGitRoot() {
@@ -111,4 +156,202 @@ import Testing
         "/Users/example/Documents/client/node_modules",
         protectedPaths: ["/Users/example/Documents"]
     ))
+}
+
+@Test func cleanupVerificationFailsClosedWhenGitFailsOrTargetReturns() {
+    #expect(CleanupPolicy.isVerifiedAfterCleanup(
+        statusBefore: " M source.swift",
+        statusAfter: " M source.swift",
+        statusAfterExitCode: 0,
+        targetStillExists: false
+    ))
+    #expect(!CleanupPolicy.isVerifiedAfterCleanup(
+        statusBefore: "fatal: repository unavailable",
+        statusAfter: "fatal: repository unavailable",
+        statusAfterExitCode: 128,
+        targetStillExists: false
+    ))
+    #expect(!CleanupPolicy.isVerifiedAfterCleanup(
+        statusBefore: "",
+        statusAfter: " M source.swift",
+        statusAfterExitCode: 0,
+        targetStillExists: false
+    ))
+    #expect(!CleanupPolicy.isVerifiedAfterCleanup(
+        statusBefore: "",
+        statusAfter: "",
+        statusAfterExitCode: 0,
+        targetStillExists: true
+    ))
+}
+
+@Test func cleanupDestinationRequiresExternalVolume() {
+    #expect(CleanupDestinationPolicy.isExternalBackupPath("/Volumes/ESPACO/Backups"))
+    #expect(!CleanupDestinationPolicy.isExternalBackupPath("/Users/example/Backups"))
+    #expect(!CleanupDestinationPolicy.isExternalBackupPath("/Volumes"))
+}
+
+@Test func backupVerifierRejectsChangedCopies() throws {
+    let fileManager = FileManager.default
+    let root = fileManager.temporaryDirectory.appending(path: UUID().uuidString)
+    let source = root.appending(path: "source")
+    let destination = root.appending(path: "destination")
+    defer { try? fileManager.removeItem(at: root) }
+
+    try fileManager.createDirectory(at: source.appending(path: "nested"), withIntermediateDirectories: true)
+    try Data("conteúdo verificado".utf8).write(to: source.appending(path: "nested/file.txt"))
+    try fileManager.createSymbolicLink(
+        atPath: source.appending(path: "link.txt").path,
+        withDestinationPath: "nested/file.txt"
+    )
+    try fileManager.copyItem(at: source, to: destination)
+    try BackupVerifier.verifyCopy(source: source, destination: destination)
+
+    try Data("conteúdo alterado".utf8).write(to: destination.appending(path: "nested/file.txt"))
+    #expect(throws: BackupVerificationError.self) {
+        try BackupVerifier.verifyCopy(source: source, destination: destination)
+    }
+}
+
+@Test func verifiedBackupStagesOriginalBeforeDeletion() throws {
+    let fileManager = FileManager.default
+    let root = fileManager.temporaryDirectory.appending(path: UUID().uuidString)
+    let source = root.appending(path: "source")
+    let backup = root.appending(path: "external/backup")
+    let removalStaging = root.appending(path: "trash/source")
+    defer { try? fileManager.removeItem(at: root) }
+
+    try fileManager.createDirectory(at: source, withIntermediateDirectories: true)
+    try Data("backup seguro".utf8).write(to: source.appending(path: "artifact.txt"))
+
+    try BackupVerifier.copyVerifiedAndStageRemoval(
+        source: source,
+        backup: backup,
+        removalStaging: removalStaging
+    )
+
+    #expect(!fileManager.fileExists(atPath: source.path))
+    #expect(fileManager.fileExists(atPath: backup.path))
+    #expect(fileManager.fileExists(atPath: removalStaging.path))
+    try BackupVerifier.verifyCopy(source: backup, destination: removalStaging)
+}
+
+@Test func failedBackupRestoresOriginalPath() throws {
+    let fileManager = FileManager.default
+    let root = fileManager.temporaryDirectory.appending(path: UUID().uuidString)
+    let source = root.appending(path: "source")
+    let blockedParent = root.appending(path: "not-a-directory")
+    let backup = blockedParent.appending(path: "backup")
+    let removalStaging = root.appending(path: "trash/source")
+    defer { try? fileManager.removeItem(at: root) }
+
+    try fileManager.createDirectory(at: source, withIntermediateDirectories: true)
+    try Data("original preservado".utf8).write(to: source.appending(path: "artifact.txt"))
+    try Data("arquivo".utf8).write(to: blockedParent)
+
+    #expect(throws: Error.self) {
+        try BackupVerifier.copyVerifiedAndStageRemoval(
+            source: source,
+            backup: backup,
+            removalStaging: removalStaging
+        )
+    }
+    #expect(fileManager.fileExists(atPath: source.path))
+    #expect(!fileManager.fileExists(atPath: removalStaging.path))
+}
+
+@Test func backupVerifierFailsClosedOnUnreadableTree() throws {
+    let fileManager = FileManager.default
+    let root = fileManager.temporaryDirectory.appending(path: UUID().uuidString)
+    let source = root.appending(path: "source")
+    let destination = root.appending(path: "destination")
+    let sourceLocked = source.appending(path: "locked")
+    let destinationLocked = destination.appending(path: "locked")
+    defer { try? fileManager.removeItem(at: root) }
+
+    try fileManager.createDirectory(at: sourceLocked, withIntermediateDirectories: true)
+    try Data("segredo".utf8).write(to: sourceLocked.appending(path: "file.txt"))
+    try fileManager.copyItem(at: source, to: destination)
+    try fileManager.setAttributes([.posixPermissions: 0], ofItemAtPath: sourceLocked.path)
+    try fileManager.setAttributes([.posixPermissions: 0], ofItemAtPath: destinationLocked.path)
+    defer {
+        try? fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: sourceLocked.path)
+        try? fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: destinationLocked.path)
+    }
+
+    #expect(throws: BackupVerificationError.self) {
+        try BackupVerifier.verifyCopy(source: source, destination: destination)
+    }
+}
+
+@Test func cleanupLogRotationIsBounded() {
+    #expect(!CleanupLogPolicy.shouldRotate(size: CleanupLogPolicy.maximumBytes - 1))
+    #expect(CleanupLogPolicy.shouldRotate(size: CleanupLogPolicy.maximumBytes))
+}
+
+@Test func nativeCacheCommandStopsAtTimeout() {
+    let startedAt = Date()
+    let result = SafeCleaner.runCommand("/bin/sleep", ["5"], timeout: 0.05)
+    #expect(result.code == 124)
+    #expect(Date().timeIntervalSince(startedAt) < 1)
+}
+
+@Test func commandRunnerCapturesOutput() {
+    let result = SafeCleaner.runCommand("/bin/echo", ["capturado"], timeout: 1)
+    #expect(result.code == 0)
+    #expect(result.output == "capturado\n")
+}
+
+@Test func scanFailureLogMessageReportsCommandFailure() {
+    let failure = CommandResult(code: 1, output: "Permission denied")
+    let message = SafeCleaner.scanFailureLogMessage(
+        operation: "varredura de artefatos",
+        path: "/tmp/example",
+        result: failure
+    )
+    #expect(message == "ERROR varredura de artefatos: /tmp/example Permission denied")
+}
+
+@Test func scanFailureLogMessageIsNilOnSuccess() {
+    let success = CommandResult(code: 0, output: "")
+    #expect(SafeCleaner.scanFailureLogMessage(
+        operation: "varredura de artefatos",
+        path: "/tmp/example",
+        result: success
+    ) == nil)
+}
+
+@Test func scanFailureLogMessageSanitizesControlCharacters() {
+    let failure = CommandResult(code: 1, output: "line1\0line2\nline3\ttrailing")
+    let message = SafeCleaner.scanFailureLogMessage(
+        operation: "varredura de artefatos",
+        path: "/tmp/example",
+        result: failure
+    )
+    #expect(message == "ERROR varredura de artefatos: /tmp/example line1 line2 line3 trailing")
+    #expect(message?.contains("\0") == false)
+    #expect(message?.contains("\n") == false)
+}
+
+@Test func scanFailureLogMessageCapsReasonLength() {
+    let longOutput = String(repeating: "x", count: 5_000)
+    let failure = CommandResult(code: 1, output: longOutput)
+    let message = SafeCleaner.scanFailureLogMessage(
+        operation: "varredura de artefatos",
+        path: "/tmp/example",
+        result: failure
+    )
+    let prefix = "ERROR varredura de artefatos: /tmp/example "
+    #expect(message?.hasPrefix(prefix) == true)
+    let reason = message!.dropFirst(prefix.count)
+    #expect(reason.count <= 201)
+}
+
+@Test func parseDuSizeKiBParsesLeadingNumber() {
+    #expect(SafeCleaner.parseDuSizeKiB("1024\t/tmp/example") == 1024)
+}
+
+@Test func parseDuSizeKiBReturnsNilOnUnparseableOutput() {
+    #expect(SafeCleaner.parseDuSizeKiB("not-a-number") == nil)
+    #expect(SafeCleaner.parseDuSizeKiB("") == nil)
 }

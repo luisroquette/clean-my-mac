@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="polish.css">
   <title>Clean My Mac — Proteção de SSD para quem cria com IA</title>
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Clean My Mac","operatingSystem":"macOS 14 ou posterior em Apple silicon","applicationCategory":"UtilitiesApplication","softwareVersion":"1.1.3","description":"Proteção autônoma de SSD para utilizadores de Codex, Claude Code e agentes de programação. Limpa artefatos regeneráveis com segurança.","downloadUrl":"https://luisroquette.github.io/clean-my-mac/#download","license":"https://opensource.org/license/mit","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Luis Roquette","url":"https://github.com/luisroquette"}}
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Clean My Mac","operatingSystem":"macOS 14 ou posterior em Apple silicon","applicationCategory":"UtilitiesApplication","softwareVersion":"1.2.1","description":"Proteção autônoma de SSD para utilizadores de Codex, Claude Code e agentes de programação. Limpa artefatos regeneráveis com segurança.","downloadUrl":"https://luisroquette.github.io/clean-my-mac/#download","license":"https://opensource.org/license/mit","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Luis Roquette","url":"https://github.com/luisroquette"}}
   </script>
 </head>
 <body>
@@ -34,22 +34,22 @@
     <section class="hero" id="top">
       <img class="hero-art" src="img/storage-hero.webp" alt="" width="1672" height="941" fetchpriority="high" decoding="async">
       <span class="hero-coordinate coordinate-top" aria-hidden="true">SSD / DADOS</span>
-      <span class="hero-coordinate coordinate-side" aria-hidden="true">MONITOR LOCAL · AMOSTRA DE 1 MIN</span>
+      <span class="hero-coordinate coordinate-side" aria-hidden="true">MONITOR LOCAL · PRESSÃO EM 5 S</span>
       <div class="hero-copy reveal">
         <p class="eyebrow"><i></i> Feito para Codex, Claude Code e agentes de programação</p>
         <h1>Sua IA escreve código.<br><em>E lota o SSD junto.</em></h1>
         <p class="lede">Worktrees, builds, <code>node_modules</code> e caches crescem a cada tarefa. O Clean My Mac vigia o disco e recupera esse espaço sozinho — ou com um clique.</p>
         <div class="actions">
-          <a class="button primary" href="#download" data-download-cta><span>Proteger meu SSD</span><small>grátis · v1.1.3 · Apple silicon</small></a>
+          <a class="button primary" href="#download" data-download-cta><span>Proteger meu SSD</span><small>grátis · v1.2.1 · Apple silicon</small></a>
           <a class="button secondary" href="#demo">Ver a limpeza em ação ↓</a>
         </div>
-        <p class="micro">Instale uma vez · monitora a cada 30 segundos · sem conta · sem telemetria</p>
+        <p class="micro">Instale uma vez · monitora a cada 5–30 segundos · sem conta · sem telemetria</p>
       </div>
       <figure class="app-shot reveal">
         <div class="menu-chip" aria-hidden="true"><img src="img/app-icon.svg" alt="" width="24" height="24"><strong>91%</strong><span>SSD</span><i></i></div>
         <span class="shot-label">SSD SOB PRESSÃO · 91%</span>
         <div class="app-visual">
-          <img src="img/app-popover.webp" alt="Clean My Mac mostrando 91% do armazenamento usado e a limpeza automática ativada" width="762" height="758" fetchpriority="high" decoding="async">
+          <img src="img/app-popover-current.png" alt="Clean My Mac mostrando 96% do armazenamento usado, alerta em 75% e limpeza em 78%" width="400" height="412" fetchpriority="high" decoding="async">
           <div class="cleaning-animation" aria-hidden="true">
             <span class="cleaning-beam"></span>
             <div class="storage-relief">
@@ -139,19 +139,19 @@
       <div class="section-heading"><p class="eyebrow">Entende projetos, não só pastas</p><h2>Autonomia com uma fronteira clara.</h2></div>
       <div class="safety-grid">
         <article class="may"><span>PODE LIMPAR</span><h3>Resíduos regeneráveis</h3><ul><li>Caches de uv, Bun, Deno e Homebrew</li><li><code>node_modules</code> e <code>.next</code> ignorados pelo Git e acima de 100 MB</li><li>Somente projetos de desenvolvimento inativos</li></ul></article>
-        <article class="never"><span>NUNCA TOCA</span><h3>Seu trabalho real</h3><ul><li>Documentos, Mesa, Downloads ou bibliotecas de mídia</li><li>Fontes Git, credenciais ou discos externos</li><li>Lixeira, dados Docker ou projetos ativos</li></ul></article>
+        <article class="never"><span>NUNCA TOCA</span><h3>Seu trabalho real</h3><ul><li>Documentos, Mesa, Downloads ou bibliotecas de mídia</li><li>Fontes Git, credenciais ou discos externos não selecionados</li><li>Lixeira existente, dados Docker ou projetos ativos</li></ul></article>
       </div>
-      <p class="safety-note">Cada limpeza gera um registro local. Artefatos são apagados somente depois das verificações de segurança. <a href="https://github.com/luisroquette/clean-my-mac/blob/main/Sources/CleanMyMac/SafeCleaner.swift">Inspecionar o código exato →</a></p>
+      <p class="safety-note">Nas preferências, escolha Lixeira, exclusão somente do lote do app ou backup em HD externo com SHA-256 antes de apagar do Mac. Itens antigos da Lixeira permanecem intocados. <a href="https://github.com/luisroquette/clean-my-mac/blob/main/Sources/CleanMyMac/SafeCleaner.swift">Inspecionar o código exato →</a></p>
     </section>
 
     <section class="section steps">
       <div class="section-heading"><p class="eyebrow">Instale uma vez</p><h2>Deixe seus agentes criarem.<br><em>O espaço se administra sozinho.</em></h2></div>
-      <div class="step-grid"><article><b>01</b><h3>Ative em um clique</h3><p>O ícone fica na barra do macOS e abre automaticamente com a sessão.</p></article><article><b>02</b><h3>Use sua IA normalmente</h3><p>Codex, Claude Code e seus builds continuam trabalhando enquanto o disco é monitorado.</p></article><article><b>03</b><h3>Recupere espaço</h3><p>Aos 78%, a lista segura entra em ação. Aos 80%, o aplicativo tenta novamente a cada minuto.</p></article></div>
+      <div class="step-grid"><article><b>01</b><h3>Ative em um clique</h3><p>O percentual fica na barra do macOS e o monitor abre automaticamente com a sessão.</p></article><article><b>02</b><h3>Use sua IA normalmente</h3><p>Codex, Claude Code e seus builds continuam trabalhando enquanto o disco é monitorado.</p></article><article><b>03</b><h3>Recupere espaço</h3><p>Aos 78%, a lista segura entra em ação. Se nada puder ser liberado, o backoff evita varreduras repetitivas; em emergência, a resposta volta a acelerar.</p></article></div>
     </section>
 
     <section class="section demo" id="demo">
       <div class="section-heading"><p class="eyebrow">Aplicativo real</p><h2>Veja o SSD respirar em 12 segundos.</h2></div>
-      <video controls playsinline preload="metadata" poster="img/app-popover.webp"><source src="video/clean-my-mac-demo.mp4" type="video/mp4">Seu navegador não reproduz este vídeo.</video>
+      <video controls playsinline preload="metadata" poster="img/app-popover-current.png"><source src="video/clean-my-mac-demo.mp4" type="video/mp4">Seu navegador não reproduz este vídeo.</video>
     </section>
 
     <section class="section install" id="download">
@@ -166,7 +166,7 @@
             <label>WhatsApp<input name="whatsapp" type="tel" inputmode="tel" autocomplete="tel" minlength="10" maxlength="20" placeholder="(11) 99999-9999" required></label>
             <label>E-mail<input name="email" type="email" autocomplete="email" maxlength="120" placeholder="voce@exemplo.com" required></label>
             <label class="lead-honeypot" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
-            <button class="button primary" type="submit"><span>Liberar download grátis</span><small>v1.1.3 · Apple silicon</small></button>
+            <button class="button primary" type="submit"><span>Liberar download grátis</span><small>v1.2.1 · Apple silicon</small></button>
             <p class="form-status" data-form-status role="status" aria-live="polite"></p>
           </form>
         </div>
@@ -174,7 +174,7 @@
           <span class="gate-code">ACESSO LIBERADO / 02</span>
           <h3>Seu download está pronto.</h3>
           <p>Seu contato foi registrado. O arquivo ZIP contém o aplicativo para macOS.</p>
-          <a class="button primary" data-download-link href="#"><span>Baixar Clean My Mac</span><small>Grátis · v1.1.3</small></a>
+          <a class="button primary" data-download-link href="#"><span>Baixar Clean My Mac</span><small>Grátis · v1.2.1</small></a>
         </div>
       </div>
     </section>
