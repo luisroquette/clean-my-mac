@@ -153,6 +153,9 @@ O log fica em:
 Swift 6, SwiftUI, AppKit, ServiceManagement e UserNotifications. Nenhuma
 dependência de runtime, Electron, conta ou serviço de nuvem.
 
+Detalhes de separação de módulos e do modelo de segurança em
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
 ## Compilar e verificar
 
 ```bash
