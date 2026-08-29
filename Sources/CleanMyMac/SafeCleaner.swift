@@ -164,13 +164,15 @@ enum SafeCleaner {
             return (0, 0, 1)
         }
         let scanStartedAt = Date()
-        let candidates = artifactCandidates(log: log)
+        let scanResult = artifactCandidates(log: log)
+        let candidates = scanResult.candidates
+        failed += scanResult.scanFailures
         let scanMilliseconds = Int(Date().timeIntervalSince(scanStartedAt) * 1_000)
-        log.append("SCAN candidatos=\(candidates.count) duracaoMs=\(scanMilliseconds)")
+        log.append("SCAN candidatos=\(candidates.count) duracaoMs=\(scanMilliseconds) falhas=\(scanResult.scanFailures)")
 
         guard let activeDirectories = activeWorkingDirectories() else {
             log.append("BLOCK inspeção de processos indisponível")
-            return (0, candidates.count, 0)
+            return (0, candidates.count, failed)
         }
         for target in candidates {
             guard let gitRoot = gitRoot(for: target) else {
@@ -196,10 +198,12 @@ enum SafeCleaner {
             let sizeResult = runCommand("/usr/bin/du", ["-sk", target.path])
             if let message = scanFailureLogMessage(operation: "medição de tamanho", path: target.path, result: sizeResult) {
                 log.append(message)
+                failed += 1
             }
             let sizeKiB = sizeResult.code == 0 ? parseDuSizeKiB(sizeResult.output) : nil
             if sizeResult.code == 0, sizeKiB == nil {
                 log.append("ERROR medição de tamanho: saída inesperada de du: \(target.path)")
+                failed += 1
             }
             guard let sizeKiB,
                   CleanupPolicy.isEligibleArtifact(
@@ -268,7 +272,7 @@ enum SafeCleaner {
         return (removed, blocked, failed)
     }
 
-    private static func artifactCandidates(log: CleanupLog) -> [URL] {
+    private static func artifactCandidates(log: CleanupLog) -> (candidates: [URL], scanFailures: Int) {
         let fileManager = FileManager.default
         var roots = CleanupPolicy.artifactScanRoots(homePath: home.path)
             .map { URL(filePath: $0, directoryHint: .isDirectory) }
@@ -293,12 +297,21 @@ enum SafeCleaner {
         }
 
         var seen = Set<String>()
-        return roots.flatMap { enumerateArtifacts(in: $0, log: log) }.filter { seen.insert($0.path).inserted }
+        var candidates: [URL] = []
+        var scanFailures = 0
+        for root in roots {
+            let scanned = enumerateArtifacts(in: root, log: log)
+            scanFailures += scanned.scanFailures
+            for url in scanned.urls where seen.insert(url.path).inserted {
+                candidates.append(url)
+            }
+        }
+        return (candidates, scanFailures)
     }
 
-    private static func enumerateArtifacts(in root: URL, log: CleanupLog) -> [URL] {
-        guard !CleanupPolicy.isProtected(root.path, protectedPaths: protectedPaths) else { return [] }
-        guard FileManager.default.fileExists(atPath: root.path) else { return [] }
+    private static func enumerateArtifacts(in root: URL, log: CleanupLog) -> (urls: [URL], scanFailures: Int) {
+        guard !CleanupPolicy.isProtected(root.path, protectedPaths: protectedPaths) else { return ([], 0) }
+        guard FileManager.default.fileExists(atPath: root.path) else { return ([], 0) }
 
         var arguments = [root.path, "-type", "d", "("]
         for (index, pattern) in CleanupPolicy.excludedDirectoryPatterns.enumerated() {
@@ -315,12 +328,13 @@ enum SafeCleaner {
         let result = runCommand("/usr/bin/find", arguments)
         if let message = scanFailureLogMessage(operation: "varredura de artefatos", path: root.path, result: result) {
             log.append(message)
+            return ([], 1)
         }
-        guard result.code == 0 else { return [] }
-        return result.output.split(separator: "\0").compactMap { rawPath in
+        let urls = result.output.split(separator: "\0").compactMap { rawPath -> URL? in
             let url = URL(filePath: String(rawPath), directoryHint: .isDirectory)
             return CleanupPolicy.isProtected(url.path, protectedPaths: protectedPaths) ? nil : url
         }
+        return (urls, 0)
     }
 
     private struct DisposalSession {
