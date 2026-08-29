@@ -69,17 +69,26 @@ enum SafeCleaner {
 
     static func scanFailureLogMessage(operation: String, path: String, result: CommandResult) -> String? {
         guard result.code != 0 else { return nil }
-        return "ERROR \(operation): \(path) \(sanitizedScanFailureReason(result.output))"
+        return "ERROR \(operation): \(withoutControlCharacters(path)) \(sanitizedScanFailureReason(result.output))"
     }
 
-    /// Strips control characters (including NUL and newlines) so a scan failure never breaks
-    /// the log into multiple lines or embeds unreadable bytes, and caps the reason to a bounded
-    /// length so one failure can't dump an entire find/du result set into the log.
-    private static func sanitizedScanFailureReason(_ raw: String) -> String {
-        let cleaned = String(raw.unicodeScalars.map {
+    /// Replaces control characters (including NUL and newlines) with spaces so a string of
+    /// unknown origin — command output or a filesystem path — can't split a log entry across
+    /// multiple lines or embed unreadable bytes. A path can't contain NUL (it's a
+    /// null-terminated C string at the OS level) but it can legitimately contain a newline or
+    /// tab, so both path and command output go through this before being logged.
+    private static func withoutControlCharacters(_ raw: String) -> String {
+        String(raw.unicodeScalars.map {
             CharacterSet.controlCharacters.contains($0) ? " " : Character($0)
         })
-        let collapsed = cleaned.split(separator: " ", omittingEmptySubsequences: true).joined(separator: " ")
+    }
+
+    /// Collapses and caps `withoutControlCharacters` output so one command failure can't dump
+    /// an entire find/du result set into the log.
+    private static func sanitizedScanFailureReason(_ raw: String) -> String {
+        let collapsed = withoutControlCharacters(raw)
+            .split(separator: " ", omittingEmptySubsequences: true)
+            .joined(separator: " ")
         guard collapsed.count > scanFailureReasonLimit else { return collapsed }
         return "\(collapsed.prefix(scanFailureReasonLimit))…"
     }
@@ -202,7 +211,7 @@ enum SafeCleaner {
             }
             let sizeKiB = sizeResult.code == 0 ? parseDuSizeKiB(sizeResult.output) : nil
             if sizeResult.code == 0, sizeKiB == nil {
-                log.append("ERROR medição de tamanho: saída inesperada de du: \(target.path)")
+                log.append("ERROR medição de tamanho: saída inesperada de du: \(withoutControlCharacters(target.path))")
                 failed += 1
             }
             guard let sizeKiB,

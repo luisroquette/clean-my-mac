@@ -355,3 +355,17 @@ import Testing
     #expect(SafeCleaner.parseDuSizeKiB("not-a-number") == nil)
     #expect(SafeCleaner.parseDuSizeKiB("") == nil)
 }
+
+@Test func scanFailureLogMessageSanitizesControlCharactersInPath() {
+    // A POSIX path can't contain NUL (it's a null-terminated C string), but it can
+    // legitimately contain a newline or tab — APFS/HFS+ only forbid "/" and NUL.
+    let failure = CommandResult(code: 1, output: "boom")
+    let message = SafeCleaner.scanFailureLogMessage(
+        operation: "varredura de artefatos",
+        path: "/tmp/weird\nname\there",
+        result: failure
+    )
+    #expect(message == "ERROR varredura de artefatos: /tmp/weird name here boom")
+    #expect(message?.contains("\n") == false)
+    #expect(message?.contains("\t") == false)
+}
