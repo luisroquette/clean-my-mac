@@ -53,6 +53,9 @@ struct MenuBarView: View {
                 Spacer()
 
                 Menu {
+                    SettingsLink {
+                        Label("Preferências…", systemImage: "gearshape")
+                    }
                     Button("Abrir log") {
                         NSWorkspace.shared.open(monitor.logURL.deletingLastPathComponent())
                     }
@@ -78,7 +81,7 @@ struct MenuBarView: View {
             }
             Button("Cancelar", role: .cancel) {}
         } message: {
-            Text("Somente caches e node_modules/.next ignorados pelo Git serão removidos. Projetos ativos, arquivos pessoais, credenciais e a Lixeira serão preservados.")
+            Text(cleanupConfirmationMessage)
         }
     }
 
@@ -154,5 +157,16 @@ struct MenuBarView: View {
     private var freeSpace: String {
         guard let snapshot = monitor.snapshot else { return "Lendo…" }
         return "\(ByteCountFormatter.string(fromByteCount: Int64(snapshot.availableBytes), countStyle: .file)) livres"
+    }
+
+    private var cleanupConfirmationMessage: String {
+        switch monitor.cleanupDestination {
+        case .trash:
+            "Os artefatos seguros serão movidos para a Lixeira. Nada que já estava nela será apagado."
+        case .deleteBatch:
+            "Somente o novo lote seguro será movido para a Lixeira e apagado. Itens antigos serão preservados."
+        case .externalBackup:
+            "Os artefatos seguros serão copiados para o HD externo, verificados por SHA-256 e removidos do Mac somente após a confirmação."
+        }
     }
 }

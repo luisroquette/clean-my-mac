@@ -13,5 +13,9 @@ struct CleanMyMacApp: App {
                 .accessibilityLabel("Clean My Mac: \(monitor.menuBarTitle) do armazenamento usado")
         }
         .menuBarExtraStyle(.window)
+
+        Settings {
+            PreferencesView(monitor: monitor)
+        }
     }
 }

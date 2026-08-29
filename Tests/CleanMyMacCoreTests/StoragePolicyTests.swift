@@ -124,3 +124,31 @@ import Testing
         protectedPaths: ["/Users/example/Documents"]
     ))
 }
+
+@Test func cleanupDestinationRequiresExternalVolume() {
+    #expect(CleanupDestinationPolicy.isExternalBackupPath("/Volumes/ESPACO/Backups"))
+    #expect(!CleanupDestinationPolicy.isExternalBackupPath("/Users/example/Backups"))
+    #expect(!CleanupDestinationPolicy.isExternalBackupPath("/Volumes"))
+}
+
+@Test func backupVerifierRejectsChangedCopies() throws {
+    let fileManager = FileManager.default
+    let root = fileManager.temporaryDirectory.appending(path: UUID().uuidString)
+    let source = root.appending(path: "source")
+    let destination = root.appending(path: "destination")
+    defer { try? fileManager.removeItem(at: root) }
+
+    try fileManager.createDirectory(at: source.appending(path: "nested"), withIntermediateDirectories: true)
+    try Data("conteúdo verificado".utf8).write(to: source.appending(path: "nested/file.txt"))
+    try fileManager.createSymbolicLink(
+        atPath: source.appending(path: "link.txt").path,
+        withDestinationPath: "nested/file.txt"
+    )
+    try fileManager.copyItem(at: source, to: destination)
+    try BackupVerifier.verifyCopy(source: source, destination: destination)
+
+    try Data("conteúdo alterado".utf8).write(to: destination.appending(path: "nested/file.txt"))
+    #expect(throws: BackupVerificationError.self) {
+        try BackupVerifier.verifyCopy(source: source, destination: destination)
+    }
+}

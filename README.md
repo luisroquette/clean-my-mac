@@ -85,8 +85,24 @@ antes e depois da remoção. Falhas e recriações entram no resultado da execu�
 > o aplicativo alerta e preserva dados pessoais e projetos ativos. Ele não
 > encerra agentes nem amplia sozinho a fronteira de exclusão.
 
-## O que mudou na v1.1.4
+## Destino da limpeza
 
+Abra **Mais opções → Preferências** e escolha:
+
+| Destino | Comportamento |
+|---|---|
+| **Mover para a Lixeira** | Mantém o lote recuperável; o espaço só retorna quando a Lixeira for esvaziada |
+| **Lixeira + apagar o lote do app** | Apaga somente o novo lote do Clean My Mac; itens antigos da Lixeira ficam intocados |
+| **Backup em HD externo + apagar do Mac** | Copia cada artefato, compara estrutura, tamanho e SHA-256, depois remove o original |
+
+O backup externo aceita somente uma pasta gravável em um volume não interno. Se
+o disco for desconectado, estiver cheio ou a cópia divergir, o original é
+preservado e a execução falha de forma fechada.
+
+## O que mudou na v1.2.0
+
+- Preferências com Lixeira, exclusão do lote exato ou backup externo verificado.
+- Backup externo preserva o original até a validação SHA-256 terminar.
 - Varredura nativa encontra `.next` e `node_modules` sem atravessar caches internos.
 - Retry reduzido para 15 segundos assim que o SSD alcança 80%.
 - Monitoramento acelerado para 5 segundos a partir de 75%.
@@ -163,6 +179,7 @@ não contém cliente de rede, analytics, telemetria, conta ou backend remoto.
 ## Limitações conhecidas
 
 - O teto de 80% depende da existência de artefatos seguros e inativos.
+- O modo Lixeira não devolve espaço ao SSD até o usuário esvaziá-la.
 - Projetos fora das raízes documentadas não são varridos.
 - Caches só são limpos quando a respectiva ferramenta está instalada.
 - O build distribuído é exclusivo para Apple silicon e ainda não é notarizado.

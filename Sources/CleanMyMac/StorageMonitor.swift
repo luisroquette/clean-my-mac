@@ -1,3 +1,4 @@
+import AppKit
 import CleanMyMacCore
 import Foundation
 import ServiceManagement
@@ -12,6 +13,8 @@ final class StorageMonitor: ObservableObject {
     @Published private(set) var isCleaning = false
     @Published private(set) var launchAtLoginEnabled = false
     @Published private(set) var launchAtLoginNeedsApproval = false
+    @Published private(set) var cleanupDestination: CleanupDestination
+    @Published private(set) var externalBackupPath: String?
 
     @Published var automaticCleanupEnabled: Bool {
         didSet { defaults.set(automaticCleanupEnabled, forKey: Keys.automaticCleanup) }
@@ -24,11 +27,16 @@ final class StorageMonitor: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        cleanupDestination = CleanupDestination(
+            rawValue: defaults.string(forKey: Keys.cleanupDestination) ?? ""
+        ) ?? .deleteBatch
+        externalBackupPath = defaults.string(forKey: Keys.externalBackupPath)
         let cleanupEnabled = defaults.object(forKey: Keys.automaticCleanup) as? Bool ?? true
         automaticCleanupEnabled = cleanupEnabled
         defaults.set(cleanupEnabled, forKey: Keys.automaticCleanup)
         warningLatched = defaults.bool(forKey: Keys.warningLatched)
         lastCleanupAt = defaults.object(forKey: Keys.lastCleanupAt) as? Date
+        defaults.set(cleanupDestination.rawValue, forKey: Keys.cleanupDestination)
 
         Task { [weak self] in
             await self?.start()
@@ -102,7 +110,9 @@ final class StorageMonitor: ObservableObject {
         Task {
             let startingFraction = snapshot?.usedFraction ?? 0
             let result = await SafeCleaner.run(
-                includeNativeCaches: !isAutomatic || !StoragePolicy.isAtOrAboveHardLimit(startingFraction)
+                includeNativeCaches: !isAutomatic || !StoragePolicy.isAtOrAboveHardLimit(startingFraction),
+                destination: cleanupDestination,
+                externalBackupPath: externalBackupPath
             )
             let now = Date()
             lastCleanupAt = now
@@ -114,10 +124,10 @@ final class StorageMonitor: ObservableObject {
             let percent = snapshot?.usedPercent ?? 0
             if percent >= Int(StoragePolicy.hardLimit * 100) {
                 let fraction = snapshot?.usedFraction ?? StoragePolicy.hardLimit
-                let retryMinutes = Int(StoragePolicy.cleanupCooldown(for: fraction) / 60)
+                let retrySeconds = Int(StoragePolicy.cleanupCooldown(for: fraction))
                 await notify(
                     title: "SSD acima do limite seguro",
-                    body: "A limpeza segura terminou, mas o disco continua em \(percent)%. Nova tentativa em \(retryMinutes) minutos.",
+                    body: "A limpeza segura terminou, mas o disco continua em \(percent)%. Nova tentativa em \(retrySeconds) segundos.",
                     critical: true
                 )
             } else {
@@ -141,6 +151,42 @@ final class StorageMonitor: ObservableObject {
             refreshLoginItemState()
         } catch {
             lastAction = "Falha no início automático: \(error.localizedDescription)"
+        }
+    }
+
+    func setCleanupDestination(_ destination: CleanupDestination) {
+        cleanupDestination = destination
+        defaults.set(destination.rawValue, forKey: Keys.cleanupDestination)
+        if destination == .externalBackup, externalBackupPath == nil {
+            lastAction = "Escolha uma pasta em um HD externo antes da próxima limpeza."
+        }
+    }
+
+    func chooseExternalBackupFolder() {
+        let panel = NSOpenPanel()
+        panel.title = "Escolher pasta de backup"
+        panel.prompt = "Usar esta pasta"
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = URL(filePath: "/Volumes", directoryHint: .isDirectory)
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            let values = try url.resourceValues(forKeys: [.volumeIsInternalKey, .volumeIsReadOnlyKey])
+            guard CleanupDestinationPolicy.isExternalBackupPath(url.path),
+                  values.volumeIsInternal == false,
+                  values.volumeIsReadOnly != true else {
+                lastAction = "Escolha uma pasta gravável em um HD externo."
+                return
+            }
+            externalBackupPath = url.standardizedFileURL.path
+            defaults.set(externalBackupPath, forKey: Keys.externalBackupPath)
+            setCleanupDestination(.externalBackup)
+            lastAction = "Backup externo configurado."
+        } catch {
+            lastAction = "Não foi possível validar o HD externo: \(error.localizedDescription)"
         }
     }
 
@@ -229,6 +275,8 @@ final class StorageMonitor: ObservableObject {
         static let warningLatched = "warningLatched"
         static let lastCleanupAt = "lastCleanupAt"
         static let didConfigureLoginItem = "didConfigureLoginItem"
+        static let cleanupDestination = "cleanupDestination"
+        static let externalBackupPath = "externalBackupPath"
     }
 }
 

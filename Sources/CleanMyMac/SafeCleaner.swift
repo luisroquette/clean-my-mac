@@ -2,6 +2,7 @@ import CleanMyMacCore
 import Foundation
 
 struct CleanupResult: Sendable {
+    let destination: CleanupDestination
     let removedTargets: Int
     let blockedTargets: Int
     let failedTargets: Int
@@ -9,13 +10,22 @@ struct CleanupResult: Sendable {
 
     var summary: String {
         let freed = ByteCountFormatter.string(fromByteCount: Int64(freedBytes), countStyle: .file)
+        let completed: String
+        switch destination {
+        case .trash:
+            completed = "\(removedTargets) itens movidos para a Lixeira"
+        case .deleteBatch:
+            completed = "\(freed) liberados com segurança"
+        case .externalBackup:
+            completed = "\(freed) liberados após backup verificado"
+        }
         if failedTargets > 0 {
-            return "\(freed) liberados; \(failedTargets) falhas verificadas. Nova tentativa agendada."
+            return "\(completed); \(failedTargets) falhas verificadas. Nova tentativa agendada."
         }
         if blockedTargets > 0 {
-            return "\(freed) liberados; \(blockedTargets) projetos ativos preservados."
+            return "\(completed); \(blockedTargets) projetos ativos preservados."
         }
-        return "\(freed) liberados com segurança."
+        return "\(completed)."
     }
 }
 
@@ -32,9 +42,17 @@ enum SafeCleaner {
     }
     private static let minimumArtifactKiB = 100 * 1024
 
-    static func run(includeNativeCaches: Bool = true) async -> CleanupResult {
+    static func run(
+        includeNativeCaches: Bool = true,
+        destination: CleanupDestination = .deleteBatch,
+        externalBackupPath: String? = nil
+    ) async -> CleanupResult {
         await Task.detached(priority: .utility) {
-            runSynchronously(includeNativeCaches: includeNativeCaches)
+            runSynchronously(
+                includeNativeCaches: includeNativeCaches,
+                destination: destination,
+                externalBackupPath: externalBackupPath
+            )
         }.value
     }
 
@@ -46,20 +64,33 @@ enum SafeCleaner {
         CleanupLog(url: logURL).append(message)
     }
 
-    private static func runSynchronously(includeNativeCaches: Bool) -> CleanupResult {
+    private static func runSynchronously(
+        includeNativeCaches: Bool,
+        destination: CleanupDestination,
+        externalBackupPath: String?
+    ) -> CleanupResult {
         let before = (try? StorageReader.read().availableBytes) ?? 0
         var removedTargets = 0
         var blockedTargets = 0
         var failedTargets = 0
         let log = CleanupLog(url: logURL)
-        log.append("START armazenamento seguro")
+        log.append("START armazenamento seguro destino=\(destination.rawValue)")
 
-        let artifactResult = cleanGeneratedArtifacts(log: log)
+        var disposal = DisposalSession(
+            destination: destination,
+            externalBackupPath: externalBackupPath
+        )
+        let artifactResult = cleanGeneratedArtifacts(log: log, disposal: &disposal)
         removedTargets += artifactResult.removed
         blockedTargets += artifactResult.blocked
         failedTargets += artifactResult.failed
-        if includeNativeCaches {
+        if !disposal.finalize(log: log) {
+            failedTargets += 1
+        }
+        if includeNativeCaches, destination == .deleteBatch {
             cleanNativeCaches(log: log)
+        } else if includeNativeCaches {
+            log.append("CACHE limpeza nativa ignorada para respeitar o destino escolhido")
         } else {
             log.append("CACHE limpeza nativa adiada para priorizar o limite de 80%")
         }
@@ -67,6 +98,7 @@ enum SafeCleaner {
         let freed = after > before ? after - before : 0
         log.append("END liberados=\(freed) removidos=\(removedTargets) bloqueados=\(blockedTargets) falhas=\(failedTargets)")
         return CleanupResult(
+            destination: destination,
             removedTargets: removedTargets,
             blockedTargets: blockedTargets,
             failedTargets: failedTargets,
@@ -90,7 +122,10 @@ enum SafeCleaner {
         }
     }
 
-    private static func cleanGeneratedArtifacts(log: CleanupLog) -> (removed: Int, blocked: Int, failed: Int) {
+    private static func cleanGeneratedArtifacts(
+        log: CleanupLog,
+        disposal: inout DisposalSession
+    ) -> (removed: Int, blocked: Int, failed: Int) {
         var removed = 0
         var blocked = 0
         var failed = 0
@@ -102,6 +137,12 @@ enum SafeCleaner {
         guard let activeDirectories = activeWorkingDirectories() else {
             log.append("BLOCK inspeção de processos indisponível")
             return (0, candidates.count, 0)
+        }
+        do {
+            try disposal.validate()
+        } catch {
+            log.append("ERROR destino indisponível: \(error.localizedDescription)")
+            return (0, 0, 1)
         }
 
         for target in candidates {
@@ -138,16 +179,26 @@ enum SafeCleaner {
 
             let statusBefore = run("/usr/bin/git", ["-C", gitRoot.path, "status", "--porcelain=v1", "-z"]).output
 
+            let receipt: ArtifactReceipt
             do {
-                try FileManager.default.removeItem(at: target)
+                receipt = try disposal.stage(
+                    target,
+                    expectedBytes: UInt64(sizeKiB) * 1_024
+                )
             } catch {
                 failed += 1
-                log.append("ERROR remoção: \(target.path) \(error.localizedDescription)")
+                log.append("ERROR destino: \(target.path) \(error.localizedDescription)")
                 continue
             }
 
             let statusAfter = run("/usr/bin/git", ["-C", gitRoot.path, "status", "--porcelain=v1", "-z"]).output
             guard statusBefore == statusAfter, !FileManager.default.fileExists(atPath: target.path) else {
+                do {
+                    try disposal.restore(receipt)
+                } catch {
+                    disposal.preserveBatch()
+                    log.append("ERROR restauração; lote preservado: \(target.path) \(error.localizedDescription)")
+                }
                 failed += 1
                 log.append("ERROR verificação pós-limpeza: \(target.path)")
                 continue
@@ -206,6 +257,161 @@ enum SafeCleaner {
         return result.output.split(separator: "\0").compactMap { rawPath in
             let url = URL(filePath: String(rawPath), directoryHint: .isDirectory)
             return CleanupPolicy.isProtected(url.path, protectedPaths: protectedPaths) ? nil : url
+        }
+    }
+
+    private struct DisposalSession {
+        let destination: CleanupDestination
+        let externalBackupPath: String?
+        private var batchRoot: URL?
+        private var mustPreserveBatch = false
+
+        init(destination: CleanupDestination, externalBackupPath: String?) {
+            self.destination = destination
+            self.externalBackupPath = externalBackupPath
+        }
+
+        func validate() throws {
+            guard destination == .externalBackup else { return }
+            guard let externalBackupPath,
+                  CleanupDestinationPolicy.isExternalBackupPath(externalBackupPath),
+                  FileManager.default.fileExists(atPath: externalBackupPath),
+                  FileManager.default.isWritableFile(atPath: externalBackupPath) else {
+                throw DisposalError.externalDriveUnavailable
+            }
+            let values = try URL(filePath: externalBackupPath).resourceValues(
+                forKeys: [.volumeIsInternalKey, .volumeIsReadOnlyKey]
+            )
+            guard values.volumeIsInternal == false, values.volumeIsReadOnly != true else {
+                throw DisposalError.externalDriveUnavailable
+            }
+        }
+
+        mutating func stage(_ target: URL, expectedBytes: UInt64) throws -> ArtifactReceipt {
+            let root = try ensureBatchRoot()
+            let destinationURL = target.pathComponents.dropFirst().reduce(root) {
+                $0.appending(path: $1, directoryHint: .inferFromPath)
+            }
+            try FileManager.default.createDirectory(
+                at: destinationURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+
+            switch destination {
+            case .trash, .deleteBatch:
+                try FileManager.default.moveItem(at: target, to: destinationURL)
+                return .staged(original: target, stored: destinationURL)
+            case .externalBackup:
+                let values = try root.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+                if let capacity = values.volumeAvailableCapacityForImportantUsage,
+                   capacity < Int64(expectedBytes) {
+                    throw DisposalError.insufficientExternalSpace
+                }
+                do {
+                    try FileManager.default.copyItem(at: target, to: destinationURL)
+                    try BackupVerifier.verifyCopy(source: target, destination: destinationURL)
+                } catch {
+                    try? FileManager.default.removeItem(at: destinationURL)
+                    throw error
+                }
+                try FileManager.default.removeItem(at: target)
+                return .backedUp(original: target, stored: destinationURL)
+            }
+        }
+
+        func restore(_ receipt: ArtifactReceipt) throws {
+            try FileManager.default.createDirectory(
+                at: receipt.original.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            switch receipt {
+            case let .staged(original, stored):
+                try FileManager.default.moveItem(at: stored, to: original)
+            case let .backedUp(original, stored):
+                try FileManager.default.copyItem(at: stored, to: original)
+                try BackupVerifier.verifyCopy(source: stored, destination: original)
+            }
+        }
+
+        mutating func preserveBatch() {
+            mustPreserveBatch = true
+        }
+
+        mutating func finalize(log: CleanupLog) -> Bool {
+            guard let batchRoot else { return true }
+            if mustPreserveBatch {
+                log.append("ERROR lote mantido para recuperação: \(batchRoot.path)")
+                return false
+            }
+            switch destination {
+            case .trash:
+                log.append("TRASH lote recuperável: \(batchRoot.path)")
+                return true
+            case .externalBackup:
+                log.append("BACKUP lote verificado: \(batchRoot.path)")
+                return true
+            case .deleteBatch:
+                let escapedPath = batchRoot.path
+                    .replacingOccurrences(of: "\\", with: "\\\\")
+                    .replacingOccurrences(of: "\"", with: "\\\"")
+                let script = """
+                with timeout of 600 seconds
+                    tell application "Finder" to delete POSIX file "\(escapedPath)"
+                end timeout
+                """
+                let result = SafeCleaner.run("/usr/bin/osascript", ["-e", script])
+                guard result.code == 0, !FileManager.default.fileExists(atPath: batchRoot.path) else {
+                    log.append("ERROR lote mantido para recuperação: \(batchRoot.path) \(result.output)")
+                    return false
+                }
+                log.append("DELETE lote exato concluído: \(batchRoot.path)")
+                return true
+            }
+        }
+
+        private mutating func ensureBatchRoot() throws -> URL {
+            if let batchRoot { return batchRoot }
+            let batchName = "\(Int(Date().timeIntervalSince1970))-\(UUID().uuidString)"
+            let root: URL
+            switch destination {
+            case .trash, .deleteBatch:
+                root = SafeCleaner.home
+                    .appending(path: ".Trash", directoryHint: .isDirectory)
+                    .appending(path: "CleanMyMac-\(batchName)", directoryHint: .isDirectory)
+            case .externalBackup:
+                guard let externalBackupPath else { throw DisposalError.externalDriveUnavailable }
+                root = URL(filePath: externalBackupPath, directoryHint: .isDirectory)
+                    .appending(path: "Clean My Mac Backups", directoryHint: .isDirectory)
+                    .appending(path: batchName, directoryHint: .isDirectory)
+            }
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            batchRoot = root
+            return root
+        }
+    }
+
+    private enum ArtifactReceipt {
+        case staged(original: URL, stored: URL)
+        case backedUp(original: URL, stored: URL)
+
+        var original: URL {
+            switch self {
+            case let .staged(original, _), let .backedUp(original, _): original
+            }
+        }
+    }
+
+    private enum DisposalError: LocalizedError {
+        case externalDriveUnavailable
+        case insufficientExternalSpace
+
+        var errorDescription: String? {
+            switch self {
+            case .externalDriveUnavailable:
+                "O HD externo escolhido não está montado ou não permite gravação."
+            case .insufficientExternalSpace:
+                "O HD externo não tem espaço livre suficiente para verificar o backup."
+            }
         }
     }
 
