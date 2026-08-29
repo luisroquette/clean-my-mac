@@ -65,6 +65,11 @@ enum SafeCleaner {
         CleanupLog(url: logURL).append(message)
     }
 
+    static func scanFailureLogMessage(operation: String, path: String, result: CommandResult) -> String? {
+        guard result.code != 0 else { return nil }
+        return "ERROR \(operation): \(path) \(result.output)"
+    }
+
     private static func runSynchronously(
         includeNativeCaches: Bool,
         destination: CleanupDestination,
@@ -137,7 +142,7 @@ enum SafeCleaner {
             return (0, 0, 1)
         }
         let scanStartedAt = Date()
-        let candidates = artifactCandidates()
+        let candidates = artifactCandidates(log: log)
         let scanMilliseconds = Int(Date().timeIntervalSince(scanStartedAt) * 1_000)
         log.append("SCAN candidatos=\(candidates.count) duracaoMs=\(scanMilliseconds)")
 
@@ -167,6 +172,9 @@ enum SafeCleaner {
             }
 
             let sizeResult = runCommand("/usr/bin/du", ["-sk", target.path])
+            if let message = scanFailureLogMessage(operation: "medição de tamanho", path: target.path, result: sizeResult) {
+                log.append(message)
+            }
             guard sizeResult.code == 0,
                   let first = sizeResult.output.split(whereSeparator: { $0.isWhitespace }).first,
                   let sizeKiB = Int(first),
@@ -236,7 +244,7 @@ enum SafeCleaner {
         return (removed, blocked, failed)
     }
 
-    private static func artifactCandidates() -> [URL] {
+    private static func artifactCandidates(log: CleanupLog) -> [URL] {
         let fileManager = FileManager.default
         var roots = CleanupPolicy.artifactScanRoots(homePath: home.path)
             .map { URL(filePath: $0, directoryHint: .isDirectory) }
@@ -261,10 +269,10 @@ enum SafeCleaner {
         }
 
         var seen = Set<String>()
-        return roots.flatMap(enumerateArtifacts).filter { seen.insert($0.path).inserted }
+        return roots.flatMap { enumerateArtifacts(in: $0, log: log) }.filter { seen.insert($0.path).inserted }
     }
 
-    private static func enumerateArtifacts(in root: URL) -> [URL] {
+    private static func enumerateArtifacts(in root: URL, log: CleanupLog) -> [URL] {
         guard !CleanupPolicy.isProtected(root.path, protectedPaths: protectedPaths) else { return [] }
         guard FileManager.default.fileExists(atPath: root.path) else { return [] }
 
@@ -281,6 +289,9 @@ enum SafeCleaner {
         ]
 
         let result = runCommand("/usr/bin/find", arguments)
+        if let message = scanFailureLogMessage(operation: "varredura de artefatos", path: root.path, result: result) {
+            log.append(message)
+        }
         guard result.code == 0 else { return [] }
         return result.output.split(separator: "\0").compactMap { rawPath in
             let url = URL(filePath: String(rawPath), directoryHint: .isDirectory)

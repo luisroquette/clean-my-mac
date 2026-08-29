@@ -301,3 +301,22 @@ import Testing
     #expect(result.code == 0)
     #expect(result.output == "capturado\n")
 }
+
+@Test func scanFailureLogMessageReportsCommandFailure() {
+    let failure = CommandResult(code: 1, output: "Permission denied")
+    let message = SafeCleaner.scanFailureLogMessage(
+        operation: "varredura de artefatos",
+        path: "/tmp/example",
+        result: failure
+    )
+    #expect(message == "ERROR varredura de artefatos: /tmp/example Permission denied")
+}
+
+@Test func scanFailureLogMessageIsNilOnSuccess() {
+    let success = CommandResult(code: 0, output: "")
+    #expect(SafeCleaner.scanFailureLogMessage(
+        operation: "varredura de artefatos",
+        path: "/tmp/example",
+        result: success
+    ) == nil)
+}
