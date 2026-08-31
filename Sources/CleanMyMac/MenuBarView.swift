@@ -77,6 +77,7 @@ struct MenuBarView: View {
             titleVisibility: .visible
         ) {
             Button(cleanupConfirmationButton, role: .destructive) {
+                confirmingCleanup = false
                 monitor.cleanNow()
             }
             Button("Cancelar", role: .cancel) {}

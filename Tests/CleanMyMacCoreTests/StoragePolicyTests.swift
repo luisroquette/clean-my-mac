@@ -140,6 +140,18 @@ import Testing
         "/project",
         activeDirectories: ["/project/app"]
     ))
+    #expect(CleanupPolicy.isProjectActive(
+        "/project",
+        activeDirectories: ["/project"]
+    ))
+    #expect(!CleanupPolicy.isProjectActive(
+        "/Users/example/Projects/app",
+        activeDirectories: ["/Users/example"]
+    ))
+    #expect(!CleanupPolicy.isProjectActive(
+        "/Users/example/Projects/app",
+        activeDirectories: ["/"]
+    ))
     #expect(!CleanupPolicy.isProjectActive(
         "/project",
         activeDirectories: ["/other/app"]
@@ -149,7 +161,7 @@ import Testing
 @Test func cleanupPolicyKeepsArtifactsInsideTheirGitRoot() {
     let roots = CleanupPolicy.artifactScanRoots(homePath: "/Users/example")
     #expect(roots.contains("/Users/example/Projects"))
-    #expect(roots.contains("/private/tmp"))
+    #expect(!roots.contains("/private/tmp"))
     #expect(CleanupPolicy.pathsOverlap("/Users/example/Projects/app/node_modules", "/Users/example/Projects/app"))
     #expect(!CleanupPolicy.pathsOverlap("/Users/example/Other/node_modules", "/Users/example/Projects/app"))
     #expect(CleanupPolicy.isProtected(
