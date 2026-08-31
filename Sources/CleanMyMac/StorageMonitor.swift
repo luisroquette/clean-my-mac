@@ -109,7 +109,10 @@ final class StorageMonitor: ObservableObject {
     }
 
     func cleanNow(isAutomatic: Bool = false) {
-        guard !isCleaning else { return }
+        guard !isCleaning else {
+            lastAction = "Uma limpeza já está em andamento."
+            return
+        }
         isCleaning = true
         lastAction = isAutomatic ? "Limpeza automática iniciada…" : "Limpeza segura iniciada…"
 

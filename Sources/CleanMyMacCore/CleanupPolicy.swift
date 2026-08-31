@@ -15,7 +15,6 @@ public enum CleanupPolicy {
     public static func artifactScanRoots(homePath: String) -> [String] {
         ["Projects", "Projetos", "Developer", "Code"]
             .map { URL(filePath: homePath).appending(path: $0).path }
-            + ["/private/tmp"]
     }
 
     public static func isProtected(_ path: String, protectedPaths: [String]) -> Bool {
@@ -42,7 +41,11 @@ public enum CleanupPolicy {
     }
 
     public static func isProjectActive(_ gitRoot: String, activeDirectories: [String]) -> Bool {
-        activeDirectories.contains { pathsOverlap($0, gitRoot) }
+        let root = normalized(gitRoot)
+        return activeDirectories.contains {
+            let activeDirectory = normalized($0)
+            return activeDirectory == root || activeDirectory.hasPrefix(root + "/")
+        }
     }
 
     public static func isVerifiedAfterCleanup(
