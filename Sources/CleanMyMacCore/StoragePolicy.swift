@@ -90,6 +90,10 @@ public enum StoragePolicy {
         removedTargets > 0 || freedBytes >= meaningfulProgressBytes
     }
 
+    public static func restoredCleanupProgress(lastCleanupAt: Date?, savedValue: Bool?) -> Bool {
+        savedValue ?? (lastCleanupAt == nil)
+    }
+
     private static func reaches(_ usedFraction: Double, threshold: Double) -> Bool {
         Int((usedFraction * 100).rounded()) >= Int((threshold * 100).rounded())
     }

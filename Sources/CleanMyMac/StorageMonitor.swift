@@ -24,7 +24,7 @@ final class StorageMonitor: ObservableObject {
     private var monitoringTask: Task<Void, Never>?
     private var warningLatched: Bool
     private var lastCleanupAt: Date?
-    private var lastCleanupMadeProgress = true
+    private var lastCleanupMadeProgress: Bool
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -37,6 +37,10 @@ final class StorageMonitor: ObservableObject {
         defaults.set(cleanupEnabled, forKey: Keys.automaticCleanup)
         warningLatched = defaults.bool(forKey: Keys.warningLatched)
         lastCleanupAt = defaults.object(forKey: Keys.lastCleanupAt) as? Date
+        lastCleanupMadeProgress = StoragePolicy.restoredCleanupProgress(
+            lastCleanupAt: lastCleanupAt,
+            savedValue: defaults.object(forKey: Keys.lastCleanupMadeProgress) as? Bool
+        )
         defaults.set(cleanupDestination.rawValue, forKey: Keys.cleanupDestination)
 
         Task { [weak self] in
@@ -130,9 +134,10 @@ final class StorageMonitor: ObservableObject {
             )
             lastCleanupAt = now
             defaults.set(now, forKey: Keys.lastCleanupAt)
+            defaults.set(lastCleanupMadeProgress, forKey: Keys.lastCleanupMadeProgress)
             isCleaning = false
-            lastAction = result.summary
             await sampleNow(allowAutomation: false)
+            lastAction = result.summary
 
             let percent = snapshot?.usedPercent ?? 0
             if percent >= Int(StoragePolicy.hardLimit * 100) {
@@ -301,6 +306,7 @@ final class StorageMonitor: ObservableObject {
         static let automaticCleanup = "automaticCleanupEnabled"
         static let warningLatched = "warningLatched"
         static let lastCleanupAt = "lastCleanupAt"
+        static let lastCleanupMadeProgress = "lastCleanupMadeProgress"
         static let didConfigureLoginItem = "didConfigureLoginItem"
         static let cleanupDestination = "cleanupDestination"
         static let externalBackupPath = "externalBackupPath"

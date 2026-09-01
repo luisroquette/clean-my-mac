@@ -30,10 +30,33 @@ struct MenuBarView: View {
                     .foregroundStyle(.orange)
             }
 
-            Text(monitor.lastAction)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+            if monitor.isCleaning {
+                HStack(spacing: 10) {
+                    ProgressView()
+                        .controlSize(.small)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Limpeza em andamento…")
+                            .font(.callout.weight(.semibold))
+                        Text("Verificando e removendo somente itens seguros.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(statusColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 10))
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            } else {
+                Text(monitor.lastAction)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            if confirmingCleanup && !monitor.isCleaning {
+                cleanupConfirmation
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
 
             Divider()
 
@@ -48,7 +71,7 @@ struct MenuBarView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(statusColor)
-                .disabled(monitor.isCleaning)
+                .disabled(monitor.isCleaning || confirmingCleanup)
 
                 Spacer()
 
@@ -71,19 +94,33 @@ struct MenuBarView: View {
         .padding(18)
         .frame(width: 380)
         .background(.ultraThinMaterial)
-        .confirmationDialog(
-            "Executar limpeza segura agora?",
-            isPresented: $confirmingCleanup,
-            titleVisibility: .visible
-        ) {
-            Button(cleanupConfirmationButton, role: .destructive) {
-                confirmingCleanup = false
-                monitor.cleanNow()
-            }
-            Button("Cancelar", role: .cancel) {}
-        } message: {
-            Text(cleanupConfirmationMessage)
+        .animation(.easeInOut(duration: 0.2), value: confirmingCleanup)
+        .animation(.easeInOut(duration: 0.2), value: monitor.isCleaning)
+        .onChange(of: monitor.isCleaning) { _, isCleaning in
+            if isCleaning { confirmingCleanup = false }
         }
+    }
+
+    private var cleanupConfirmation: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Executar limpeza segura agora?")
+                .font(.callout.weight(.semibold))
+            Text(cleanupConfirmationMessage)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack {
+                Button("Cancelar") { confirmingCleanup = false }
+                Spacer()
+                Button(cleanupConfirmationButton, role: .destructive) {
+                    confirmingCleanup = false
+                    monitor.cleanNow()
+                }
+            }
+        }
+        .padding(12)
+        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Confirmação de limpeza segura")
     }
 
     private var header: some View {
