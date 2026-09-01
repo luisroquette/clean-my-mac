@@ -73,6 +73,9 @@ import Testing
         removedTargets: 0,
         freedBytes: StoragePolicy.meaningfulProgressBytes
     ))
+    #expect(StoragePolicy.restoredCleanupProgress(lastCleanupAt: nil, savedValue: nil))
+    #expect(!StoragePolicy.restoredCleanupProgress(lastCleanupAt: now, savedValue: nil))
+    #expect(StoragePolicy.restoredCleanupProgress(lastCleanupAt: now, savedValue: true))
     #expect(StoragePolicy.cleanupCooldown(for: 0.81, lastCleanupMadeProgress: false) == 300)
     #expect(StoragePolicy.cleanupCooldown(for: 0.95, lastCleanupMadeProgress: false) == 15)
     #expect(!StoragePolicy.shouldRunAutomaticCleanup(

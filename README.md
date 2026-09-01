@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/BAIXAR-PARA%20MAC-F28C38?style=for-the-badge&logo=apple&logoColor=white" alt="Baixar Clean My Mac"></a>
-  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.2.3"><img src="https://img.shields.io/badge/VERSÃO-1.2.3-201C19?style=for-the-badge" alt="Versão 1.2.3"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.2.4"><img src="https://img.shields.io/badge/VERSÃO-1.2.4-201C19?style=for-the-badge" alt="Versão 1.2.4"></a>
   <a href="https://github.com/luisroquette/clean-my-mac/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/luisroquette/clean-my-mac/ci.yml?branch=main&style=for-the-badge&label=CI" alt="Status do CI"></a>
 </p>
 
@@ -99,9 +99,11 @@ O backup externo aceita somente uma pasta gravável em um volume não interno. S
 o disco for desconectado, estiver cheio, a cópia divergir ou a exclusão falhar,
 o original permanece recuperável e a execução falha de forma fechada.
 
-## O que mudou na v1.2.3
+## O que mudou na v1.2.4
 
-- Correção: a sanitização de mensagens de falha de varredura (v1.2.2) limpava a saída do comando mas não o caminho do arquivo — um caminho com quebra de linha embutida ainda podia corromper o log em múltiplas linhas. Agora ambos passam pela mesma limpeza.
+- A confirmação de limpeza agora acontece dentro do painel, evitando que o menu do macOS feche antes de iniciar a ação.
+- Spinner e mensagem deixam a limpeza em andamento visualmente perceptível.
+- O resultado permanece visível após a nova leitura do disco, e o cooldown sem progresso é preservado ao reiniciar o app.
 
 ## Instalação
 
