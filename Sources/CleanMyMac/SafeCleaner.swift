@@ -39,18 +39,21 @@ enum SafeCleaner {
         [
             "Applications", "Desktop", "Documents", "Downloads", "Library", "Movies",
             "Music", "Pictures", "Public", "Arquivos Públicos", "Arquivos Públicos", ".Trash",
+            ".claude", ".codex",
         ].map { home.appending(path: $0).path }
     }
     private static let minimumArtifactKiB = 100 * 1024
 
     static func run(
         includeNativeCaches: Bool = true,
+        escalateNativeCachesAtHardLimit: Bool = false,
         destination: CleanupDestination = .deleteBatch,
         externalBackupPath: String? = nil
     ) async -> CleanupResult {
         await Task.detached(priority: .utility) {
             runSynchronously(
                 includeNativeCaches: includeNativeCaches,
+                escalateNativeCachesAtHardLimit: escalateNativeCachesAtHardLimit,
                 destination: destination,
                 externalBackupPath: externalBackupPath
             )
@@ -103,6 +106,7 @@ enum SafeCleaner {
 
     private static func runSynchronously(
         includeNativeCaches: Bool,
+        escalateNativeCachesAtHardLimit: Bool,
         destination: CleanupDestination,
         externalBackupPath: String?
     ) -> CleanupResult {
@@ -124,12 +128,18 @@ enum SafeCleaner {
         if !disposal.finalize(log: log) {
             failedTargets += 1
         }
-        if includeNativeCaches, destination == .deleteBatch {
-            cleanNativeCaches(log: log)
-        } else if includeNativeCaches {
+        let fractionAfterArtifacts = try? StorageReader.read().usedFraction
+        let shouldCleanNativeCaches = StoragePolicy.shouldCleanNativeCaches(
+            requested: includeNativeCaches,
+            escalateAtHardLimit: escalateNativeCachesAtHardLimit,
+            usedFractionAfterArtifacts: fractionAfterArtifacts
+        )
+        if shouldCleanNativeCaches, destination == .deleteBatch {
+            failedTargets += cleanNativeCaches(log: log)
+        } else if shouldCleanNativeCaches {
             log.append("CACHE limpeza nativa ignorada para respeitar o destino escolhido")
         } else {
-            log.append("CACHE limpeza nativa adiada para priorizar o limite de 80%")
+            log.append("CACHE limpeza nativa dispensada: uso abaixo do limite de 80%")
         }
         let after = (try? StorageReader.read().availableBytes) ?? before
         let freed = after > before ? after - before : 0
@@ -143,20 +153,37 @@ enum SafeCleaner {
         )
     }
 
-    private static func cleanNativeCaches(log: CleanupLog) {
-        let commands: [([String], [String])] = [
-            ([home.appending(path: ".local/bin/uv").path, "/opt/homebrew/bin/uv", "/usr/local/bin/uv"], ["cache", "clean"]),
-            (["/opt/homebrew/bin/npm", "/usr/local/bin/npm"], ["cache", "clean", "--force"]),
-            ([home.appending(path: ".bun/bin/bun").path, "/opt/homebrew/bin/bun", "/usr/local/bin/bun"], ["pm", "cache", "rm"]),
-            (["/opt/homebrew/bin/deno", "/usr/local/bin/deno"], ["clean"]),
-            (["/opt/homebrew/bin/brew", "/usr/local/bin/brew"], ["cleanup", "-s", "--prune=all"]),
+    private static func cleanNativeCaches(log: CleanupLog) -> Int {
+        let bunWorkspace = FileManager.default.temporaryDirectory
+            .appending(path: "CleanMyMac-bun-cache-\(UUID().uuidString)", directoryHint: .isDirectory)
+        var bunWorkingDirectory: URL?
+        var failures = 0
+        do {
+            try FileManager.default.createDirectory(at: bunWorkspace, withIntermediateDirectories: true)
+            try Data("{\"private\":true}\n".utf8).write(to: bunWorkspace.appending(path: "package.json"))
+            bunWorkingDirectory = bunWorkspace
+        } catch {
+            failures += 1
+            log.append("CACHE Bun workspace exit=-1 \(error.localizedDescription)")
+        }
+        defer { try? FileManager.default.removeItem(at: bunWorkspace) }
+
+        let commands: [([String], [String], URL?)] = [
+            ([home.appending(path: ".local/bin/uv").path, "/opt/homebrew/bin/uv", "/usr/local/bin/uv"], ["cache", "clean"], nil),
+            (["/opt/homebrew/bin/npm", "/usr/local/bin/npm"], ["cache", "clean", "--force"], nil),
+            ([home.appending(path: ".bun/bin/bun").path, "/opt/homebrew/bin/bun", "/usr/local/bin/bun"], ["pm", "cache", "rm"], bunWorkingDirectory),
+            (["/opt/homebrew/bin/deno", "/usr/local/bin/deno"], ["clean"], nil),
+            (["/opt/homebrew/bin/brew", "/usr/local/bin/brew"], ["cleanup", "-s", "--prune=all"], nil),
         ]
 
-        for (locations, arguments) in commands {
+        for (locations, arguments, workingDirectory) in commands {
             guard let executable = locations.first(where: FileManager.default.isExecutableFile(atPath:)) else { continue }
-            let result = runCommand(executable, arguments, timeout: 120)
+            guard arguments != ["pm", "cache", "rm"] || workingDirectory != nil else { continue }
+            let result = runCommand(executable, arguments, timeout: 120, currentDirectoryURL: workingDirectory)
+            if result.code != 0 { failures += 1 }
             log.append("CACHE \(executable) exit=\(result.code) \(result.output)")
         }
+        return failures
     }
 
     private static func cleanGeneratedArtifacts(
@@ -576,7 +603,8 @@ enum SafeCleaner {
     static func runCommand(
         _ executable: String,
         _ arguments: [String],
-        timeout: TimeInterval = 60
+        timeout: TimeInterval = 60,
+        currentDirectoryURL: URL? = nil
     ) -> CommandResult {
         let fileManager = FileManager.default
         let outputURL = fileManager.temporaryDirectory
@@ -594,6 +622,7 @@ enum SafeCleaner {
         let terminated = DispatchSemaphore(value: 0)
         process.executableURL = URL(filePath: executable)
         process.arguments = arguments
+        process.currentDirectoryURL = currentDirectoryURL
         process.standardOutput = outputHandle
         process.standardError = outputHandle
         process.terminationHandler = { _ in terminated.signal() }

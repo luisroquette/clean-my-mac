@@ -76,13 +76,13 @@ import Testing
     #expect(StoragePolicy.restoredCleanupProgress(lastCleanupAt: nil, savedValue: nil))
     #expect(!StoragePolicy.restoredCleanupProgress(lastCleanupAt: now, savedValue: nil))
     #expect(StoragePolicy.restoredCleanupProgress(lastCleanupAt: now, savedValue: true))
-    #expect(StoragePolicy.cleanupCooldown(for: 0.81, lastCleanupMadeProgress: false) == 300)
+    #expect(StoragePolicy.cleanupCooldown(for: 0.81, lastCleanupMadeProgress: false) == 15)
     #expect(StoragePolicy.cleanupCooldown(for: 0.95, lastCleanupMadeProgress: false) == 15)
     #expect(!StoragePolicy.shouldRunAutomaticCleanup(
         usedFraction: 0.81,
         enabled: true,
         isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-299),
+        lastCleanupAt: now.addingTimeInterval(-14),
         lastCleanupMadeProgress: false,
         now: now
     ))
@@ -90,9 +90,24 @@ import Testing
         usedFraction: 0.81,
         enabled: true,
         isCleaning: false,
-        lastCleanupAt: now.addingTimeInterval(-300),
+        lastCleanupAt: now.addingTimeInterval(-15),
         lastCleanupMadeProgress: false,
         now: now
+    ))
+    #expect(StoragePolicy.shouldCleanNativeCaches(
+        requested: false,
+        escalateAtHardLimit: true,
+        usedFractionAfterArtifacts: 0.81
+    ))
+    #expect(!StoragePolicy.shouldCleanNativeCaches(
+        requested: false,
+        escalateAtHardLimit: true,
+        usedFractionAfterArtifacts: 0.79
+    ))
+    #expect(StoragePolicy.shouldCleanNativeCaches(
+        requested: false,
+        escalateAtHardLimit: true,
+        usedFractionAfterArtifacts: nil
     ))
 }
 
@@ -134,11 +149,19 @@ import Testing
         isSymbolicLink: true,
         minimumKiB: 102_400
     ))
-    #expect(CleanupPolicy.shouldExcludeDirectory(named: ".claude"))
+    #expect(!CleanupPolicy.shouldExcludeDirectory(named: ".claude"))
     #expect(CleanupPolicy.shouldExcludeDirectory(named: "claude-501"))
     #expect(!CleanupPolicy.shouldExcludeDirectory(named: "cfgauss-claude-site"))
-    #expect(CleanupPolicy.excludedDirectoryPatterns.contains(".claude"))
+    #expect(!CleanupPolicy.excludedDirectoryPatterns.contains(".claude"))
     #expect(CleanupPolicy.excludedDirectoryPatterns.contains("claude-*"))
+    #expect(CleanupPolicy.isProtected(
+        "/Users/example/.claude/memory/node_modules",
+        protectedPaths: ["/Users/example/.claude"]
+    ))
+    #expect(!CleanupPolicy.isProtected(
+        "/Users/example/Projects/app/.claude/worktrees/task/.next",
+        protectedPaths: ["/Users/example/.claude"]
+    ))
     #expect(CleanupPolicy.isProjectActive(
         "/project",
         activeDirectories: ["/project/app"]
@@ -315,6 +338,20 @@ import Testing
     let result = SafeCleaner.runCommand("/bin/echo", ["capturado"], timeout: 1)
     #expect(result.code == 0)
     #expect(result.output == "capturado\n")
+}
+
+@Test func commandRunnerUsesRequestedWorkingDirectory() throws {
+    let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let result = SafeCleaner.runCommand("/bin/pwd", [], currentDirectoryURL: directory)
+    #expect(result.code == 0)
+    let reportedDirectory = URL(
+        filePath: result.output.trimmingCharacters(in: .whitespacesAndNewlines),
+        directoryHint: .isDirectory
+    )
+    #expect(reportedDirectory.resolvingSymlinksInPath() == directory.resolvingSymlinksInPath())
 }
 
 @Test func scanFailureLogMessageReportsCommandFailure() {

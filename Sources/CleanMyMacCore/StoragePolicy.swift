@@ -67,13 +67,24 @@ public enum StoragePolicy {
         for usedFraction: Double,
         lastCleanupMadeProgress: Bool = true
     ) -> TimeInterval {
-        if reaches(usedFraction, threshold: emergencyThreshold) {
+        if isAtOrAboveHardLimit(usedFraction) {
             return hardLimitCleanupCooldown
         }
         if !lastCleanupMadeProgress {
             return noProgressCleanupCooldown
         }
-        return isAtOrAboveHardLimit(usedFraction) ? hardLimitCleanupCooldown : cleanupCooldown
+        return cleanupCooldown
+    }
+
+    public static func shouldCleanNativeCaches(
+        requested: Bool,
+        escalateAtHardLimit: Bool,
+        usedFractionAfterArtifacts: Double?
+    ) -> Bool {
+        if requested { return true }
+        guard escalateAtHardLimit else { return false }
+        guard let usedFractionAfterArtifacts else { return true }
+        return isAtOrAboveHardLimit(usedFractionAfterArtifacts)
     }
 
     public static func monitoringInterval(for usedFraction: Double) -> TimeInterval {
