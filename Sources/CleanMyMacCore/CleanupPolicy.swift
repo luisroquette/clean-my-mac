@@ -2,7 +2,7 @@ import Foundation
 
 public enum CleanupPolicy {
     private static let excludedDirectoryNames = Set([
-        ".git", ".claude", ".codex", ".npm", ".npm-global", ".9router", ".vscode",
+        ".git", ".codex", ".npm", ".npm-global", ".9router", ".vscode",
         ".Trash", "Library", "Arquivos Públicos", "Arquivos Públicos",
     ])
 

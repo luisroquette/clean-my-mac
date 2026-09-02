@@ -124,6 +124,7 @@ final class StorageMonitor: ObservableObject {
             let startingFraction = snapshot?.usedFraction ?? 0
             let result = await SafeCleaner.run(
                 includeNativeCaches: !isAutomatic || !StoragePolicy.isAtOrAboveHardLimit(startingFraction),
+                escalateNativeCachesAtHardLimit: isAutomatic,
                 destination: cleanupDestination,
                 externalBackupPath: externalBackupPath
             )

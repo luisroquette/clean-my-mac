@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://luisroquette.github.io/clean-my-mac/"><img src="https://img.shields.io/badge/BAIXAR-PARA%20MAC-F28C38?style=for-the-badge&logo=apple&logoColor=white" alt="Baixar Clean My Mac"></a>
-  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.2.4"><img src="https://img.shields.io/badge/VERSÃO-1.2.4-201C19?style=for-the-badge" alt="Versão 1.2.4"></a>
+  <a href="https://github.com/luisroquette/clean-my-mac/releases/tag/v1.2.5"><img src="https://img.shields.io/badge/VERSÃO-1.2.5-201C19?style=for-the-badge" alt="Versão 1.2.5"></a>
   <a href="https://github.com/luisroquette/clean-my-mac/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/luisroquette/clean-my-mac/ci.yml?branch=main&style=for-the-badge&label=CI" alt="Status do CI"></a>
 </p>
 
@@ -81,9 +81,9 @@ A inspeção de processos falha de forma fechada: se o macOS não permitir
 confirmar que um projeto está inativo, o alvo é preservado. O Git é comparado
 antes e depois da remoção. Falhas e recriações entram no resultado da execução.
 
-> O teto de 80% é **best-effort**. Se não existir espaço regenerável suficiente,
-> o aplicativo alerta e preserva dados pessoais e projetos ativos. Ele não
-> encerra agentes nem amplia sozinho a fronteira de exclusão.
+> O teto de 80% é **best-effort**, mas nunca é tratado como concluído enquanto o
+> disco continuar acima dele. O aplicativo repete a limpeza a cada 15 segundos,
+> amplia a tentativa para caches nativos e mantém dados pessoais e projetos ativos protegidos.
 
 ## Destino da limpeza
 
@@ -99,11 +99,11 @@ O backup externo aceita somente uma pasta gravável em um volume não interno. S
 o disco for desconectado, estiver cheio, a cópia divergir ou a exclusão falhar,
 o original permanece recuperável e a execução falha de forma fechada.
 
-## O que mudou na v1.2.4
+## O que mudou na v1.2.5
 
-- A confirmação de limpeza agora acontece dentro do painel, evitando que o menu do macOS feche antes de iniciar a ação.
-- Spinner e mensagem deixam a limpeza em andamento visualmente perceptível.
-- O resultado permanece visível após a nova leitura do disco, e o cooldown sem progresso é preservado ao reiniciar o app.
+- Acima de 80%, a limpeza volta a tentar a cada 15 segundos mesmo quando a rodada anterior não liberou espaço.
+- Se os artefatos não bastarem, a mesma rodada avança para os caches nativos; o Bun usa um diretório controlado e falhas entram no resultado.
+- `.next` e `node_modules` inativos em worktrees de projeto dentro de `.claude` entram na lista segura; `~/.claude` continua protegido.
 
 ## Instalação
 
@@ -166,8 +166,10 @@ pública e assinatura do aplicativo.
 ## Escopo de projetos
 
 A busca de artefatos cobre `~/Projects`, `~/Projetos`, `~/Developer`, `~/Code` e
-pastas diretas da home que contenham `.git` ou `package.json`. Pastas ocultas,
-áreas pessoais do macOS e caminhos protegidos são excluídos antes da varredura.
+pastas diretas da home que contenham `.git` ou `package.json`. Áreas pessoais do
+macOS e caminhos protegidos são excluídos antes da varredura. Worktrees de projeto
+dentro de `.claude` são atravessados somente para encontrar `.next` e `node_modules`
+ignorados pelo Git, grandes e sem processo ativo.
 
 ## Privacidade
 
@@ -176,7 +178,8 @@ não contém cliente de rede, analytics, telemetria, conta ou backend remoto.
 
 ## Limitações conhecidas
 
-- O teto de 80% depende da existência de artefatos seguros e inativos.
+- O teto de 80% depende da existência de artefatos seguros; enquanto estiver acima,
+  o app continua tentando e mantém o uso o mais próximo possível sem apagar trabalho ativo.
 - O modo Lixeira não devolve espaço ao SSD até o usuário esvaziá-la.
 - Projetos fora das raízes documentadas não são varridos.
 - Caches só são limpos quando a respectiva ferramenta está instalada.
